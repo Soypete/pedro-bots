@@ -1,0 +1,44 @@
+[project]
+name = "pedro-bots"
+version = "0.1.0"
+description = "RedditWatch — self-hosted LLM agent for Reddit monitoring and Discord digests"
+readme = "README.md"
+requires-python = "~=3.12"
+dependencies = [
+    "langchain>=0.3",
+    "langgraph>=0.2",
+    "langchain-openai>=0.2",
+    "praw>=7.0",
+    "psycopg2-binary>=2.9",
+    "requests>=2.31",
+    "pydantic>=2.0",
+    "certifi>=2024.0",
+]
+
+[project.scripts]
+tweetwatch = "main:cli"
+
+[tool.pixi.workspace]
+channels = ["conda-forge"]
+platforms = ["osx-arm64", "osx-64", "linux-aarch64"]
+
+[tool.pixi.dependencies]
+python = "~=3.12"
+
+# All deps are PyPI-only; installed transitively via the editable package
+# When middleware-py is published to PyPI, replace the path with: middleware-py = ">=0.1.0"
+[tool.pixi.pypi-dependencies]
+pedro-bots = { path = ".", editable = true }
+middleware-py = { path = "/Users/miriahpeterson/Code/go-projects/pedro-agentware/middleware_py", editable = true }
+
+[tool.pixi.tasks]
+monitor    = { cmd = "op run --env-file=.env -- python -m main --agent monitor", env = { PYTHONPATH = "src" } }
+suggest    = { cmd = "op run --env-file=.env -- python -m main --agent suggest", env = { PYTHONPATH = "src" } }
+export     = { cmd = "op run --env-file=.env -- python scripts/export_training_data.py" }
+migrate    = { cmd = "op run --env-file=.env -- bash scripts/migrate.sh" }
+check      = { cmd = "op run --env-file=.env -- python scripts/check_scrape.py", env = { PYTHONPATH = "src" } }
+# Docker runtime tasks — secrets already injected as env vars, no op run needed
+docker-monitor = { cmd = "python -m main --agent monitor", env = { PYTHONPATH = "src" } }
+docker-suggest = { cmd = "python -m main --agent suggest", env = { PYTHONPATH = "src" } }
+# Rebuild the local middleware-py wheel after changes to middleware-py source
+build-wheel = { cmd = "uv build --wheel /Users/miriahpeterson/Code/go-projects/pedro-agentware/middleware_py --out-dir ./local-packages/" }

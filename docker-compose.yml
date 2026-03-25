@@ -1,0 +1,45 @@
+# Local testing only — secrets are injected by op run on the host.
+#
+# Usage:
+#   op run --env-file=.env -- docker compose run --rm monitor
+#   op run --env-file=.env -- docker compose run --rm suggest
+#
+# Or build + run in one step:
+#   make monitor
+
+services:
+  monitor:
+    build: .
+    command: ["monitor"]
+    environment:
+      - TWITTER_API_KEY
+      - TWITTER_API_SECRET
+      - TWITTER_BEARER_TOKEN
+      - TWILIO_ACCOUNT_SID
+      - TWILIO_AUTH_TOKEN
+      - TWILIO_FROM_NUMBER
+      - TWILIO_TO_NUMBER
+      - POSTGRES_URL
+      - LLAMA_CPP_BASE_URL
+      - LLAMA_CPP_MODEL
+      - TWITTER_API_TIER
+      - MAX_TWEETS_PER_QUERY
+      - LOG_LEVEL
+
+  suggest:
+    build: .
+    command: ["suggest"]
+    environment:
+      - TWITTER_API_KEY
+      - TWITTER_API_SECRET
+      - TWITTER_BEARER_TOKEN
+      - TWILIO_ACCOUNT_SID
+      - TWILIO_AUTH_TOKEN
+      - TWILIO_FROM_NUMBER
+      - TWILIO_TO_NUMBER
+      - POSTGRES_URL
+      - LLAMA_CPP_BASE_URL
+      - LLAMA_CPP_MODEL
+      - TWITTER_API_TIER
+      - MAX_TWEETS_PER_QUERY
+      - LOG_LEVEL

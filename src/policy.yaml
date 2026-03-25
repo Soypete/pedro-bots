@@ -1,0 +1,38 @@
+rules:
+  # Rate-limit Twitter searches — Basic tier allows limited requests
+  - name: rate-limit-twitter-search
+    tools:
+      - search_tweets
+    action: allow
+    max_rate:
+      count: 30
+      window: 900  # 30 calls per 15 minutes (Twitter rate limit window)
+
+  # Rate-limit trending topics — heavier endpoint
+  - name: rate-limit-trending
+    tools:
+      - get_trending_topics
+    action: allow
+    max_rate:
+      count: 5
+      window: 900
+
+  # Rate-limit WhatsApp — avoid duplicate/spam messages per run
+  - name: rate-limit-whatsapp
+    tools:
+      - send_whatsapp_message
+    action: allow
+    max_rate:
+      count: 3
+      window: 3600  # max 3 messages per hour
+
+  # Allow all DB tools freely — they're internal and fast
+  - name: allow-db-tools
+    tools:
+      - load_active_topics
+      - get_seen_tweet_ids
+      - store_classification
+      - get_interesting_tweets
+    action: allow
+
+default_deny: false

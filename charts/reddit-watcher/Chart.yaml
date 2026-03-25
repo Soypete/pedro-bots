@@ -1,0 +1,11 @@
+apiVersion: v2
+name: reddit-watcher
+description: RedditWatch - LLM-powered Reddit monitoring agent
+type: application
+version: 0.1.0
+appVersion: "latest"
+keywords:
+  - reddit
+  - langchain
+  - discord
+  - llm

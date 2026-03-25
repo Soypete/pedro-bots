@@ -1,0 +1,29 @@
+# RedditWatch middleware policy
+# Enforced on every tool call via middleware-py
+
+rules:
+  # Rate-limit WhatsApp sends to prevent spam (max 5 per hour)
+  - name: whatsapp_rate_limit
+    tools: [send_whatsapp_message]
+    action: allow
+    max_rate:
+      count: 5
+      window: 3600
+
+  # Read-only Reddit and DB tools — always allow
+  - name: allow_read_tools
+    tools:
+      - search_reddit_posts
+      - load_active_topics
+      - get_seen_tweet_ids
+      - get_interesting_tweets
+      - get_trending_subreddits
+    action: allow
+
+  # DB write — always allow (training data)
+  - name: allow_store_classification
+    tools: [store_classification]
+    action: allow
+
+# Deny anything not explicitly listed above
+default_deny: true

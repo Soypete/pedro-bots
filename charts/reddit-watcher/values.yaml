@@ -1,0 +1,94 @@
+replicaCount: 1
+
+image:
+  repository: registry.local/reddit-watcher
+  pullPolicy: IfNotPresent
+  tag: "latest"
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  create: false
+  name: ""
+
+podAnnotations: {}
+
+podSecurityContext: {}
+  # fsGroup: 2000
+
+securityContext: {}
+  # capabilities:
+  #   drop:
+  #   - ALL
+  # readOnlyRootFilesystem: true
+  # runAsNonRoot: true
+  # runAsUser: 1000
+
+service:
+  type: ClusterIP
+  port: 80
+
+ingress:
+  enabled: false
+  className: ""
+  annotations: {}
+    # kubernetes.io/ingress.class: nginx
+    # kubernetes.io/tls-acme: "true"
+  hosts:
+    - host: chart-example.local
+      paths:
+        - path: /
+          pathType: ImplementationSpecific
+  tls: []
+  #  - secretName: chart-example-tls
+  #    hosts:
+  #      - chart-example.local
+
+resources: {}
+  # We usually recommend not to specify default resources and instead to request explicit ones as needed.
+  # To make this part of your chart-template deployable, you can increase -memory requests and/or limits.
+  # Remember to set quotes because YAML parses 128Mi as a base-60 number!
+  # limits:
+  #   cpu: 100m
+  #   memory: 128Mi
+  # requests:
+  #   cpu: 100m
+  #   memory: 128Mi
+
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 100
+  targetCPUUtilizationPercentage: 80
+  # targetMemoryUtilizationPercentage: 80
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
+
+monitor:
+  schedule: "0 14,19,0 * * *"  # 08:00, 13:00, 18:00 Mountain Time
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 5
+
+suggestion:
+  schedule: "0 15 * * 1"  # Monday 09:00 Mountain Time
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 5
+
+discord:
+  webhookUrl: ""
+  notifyUserId: ""
+  pingThreshold: 0.8
+
+config:
+  llamaCppBaseUrl: "http://llamacpp-svc.homelab.svc.cluster.local:8080/v1"
+  llamaCppModel: "qwen2.5-14b-instruct"
+  logLevel: "INFO"
+  maxPostsPerQuery: 20

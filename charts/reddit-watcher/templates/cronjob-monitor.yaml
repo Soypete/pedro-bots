@@ -1,0 +1,47 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: {{ include "reddit-watcher.fullname" . }}-monitor
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "reddit-watcher.labels" . | nindent 4 }}
+    app: monitor
+spec:
+  schedule: {{ .Values.monitor.schedule | quote }}
+  concurrencyPolicy: {{ .Values.monitor.concurrencyPolicy }}
+  successfulJobsHistoryLimit: {{ .Values.monitor.successfulJobsHistoryLimit }}
+  failedJobsHistoryLimit: {{ .Values.monitor.failedJobsHistoryLimit }}
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          restartPolicy: OnFailure
+          containers:
+            - name: {{ .Chart.Name }}
+              image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+              imagePullPolicy: {{ .Values.image.pullPolicy }}
+              command: ["python", "-m", "main", "--agent", "monitor"]
+              env:
+                - name: LLAMA_CPP_BASE_URL
+                  value: {{ .Values.config.llamaCppBaseUrl | quote }}
+                - name: LLAMA_CPP_MODEL
+                  value: {{ .Values.config.llamaCppModel | quote }}
+                - name: LOG_LEVEL
+                  value: {{ .Values.config.logLevel | quote }}
+                - name: DISCORD_WEBHOOK_URL
+                  valueFrom:
+                    secretKeyRef:
+                      name: {{ include "reddit-watcher.fullname" . }}-secrets
+                      key: discord-webhook-url
+                      optional: true
+                - name: DISCORD_NOTIFY_USER_ID
+                  valueFrom:
+                    secretKeyRef:
+                      name: {{ include "reddit-watcher.fullname" . }}-secrets
+                      key: discord-notify-user-id
+                      optional: true
+              envFrom:
+                - secretRef:
+                    name: {{ include "reddit-watcher.fullname" . }}-secrets
+                - configMapRef:
+                    name: {{ include "reddit-watcher.fullname" . }}-config

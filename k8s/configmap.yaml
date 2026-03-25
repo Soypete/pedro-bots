@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: tweetwatch-config
+  namespace: tweetwatch
+data:
+  # Swap model by editing this value — no redeploy of code required
+  LLAMA_CPP_BASE_URL: "http://llamacpp-svc.homelab.svc.cluster.local:8080/v1"
+  LLAMA_CPP_MODEL: "qwen2.5-14b-instruct"
+  # Set to "free" to enable Free-tier fallback behavior (1 query, 10 tweets/run)
+  TWITTER_API_TIER: "basic"
+  MAX_TWEETS_PER_QUERY: "20"
+  LOG_LEVEL: "INFO"

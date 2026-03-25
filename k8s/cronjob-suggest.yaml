@@ -1,0 +1,26 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: tweetwatch-suggest
+  namespace: tweetwatch
+spec:
+  # Monday 09:00 Mountain Time (UTC-6 MST)
+  # Update to "0 16 * * 1" during MDT (UTC-7).
+  schedule: "0 15 * * 1"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 5
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          restartPolicy: OnFailure
+          containers:
+            - name: tweetwatch
+              image: registry.local/tweetwatch:latest
+              command: ["--agent", "suggest"]
+              envFrom:
+                - secretRef:
+                    name: tweetwatch-secrets
+                - configMapRef:
+                    name: tweetwatch-config
