@@ -1,6 +1,6 @@
 -- Rename tables from Twitter-era tw_ prefix to rw_ (RedditWatch)
 
-SET search_path = tweetwatch;
+SET search_path = redditwatch;
 
 ALTER TABLE tw_topics RENAME TO rw_topics;
 ALTER TABLE tw_classifications RENAME TO rw_classifications;

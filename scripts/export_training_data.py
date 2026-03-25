@@ -36,13 +36,13 @@ def export(confidence_threshold: float, output_path: str) -> None:
     conn = psycopg2.connect(os.environ["POSTGRES_URL"])
     conn.autocommit = True
     with conn.cursor() as cur:
-        cur.execute("SET search_path = tweetwatch")
+        cur.execute("SET search_path = redditwatch")
     with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
         cur.execute(
             """
-            SELECT tweet_id, author_handle, topic_query, raw_tweet,
-                   classification, confidence, reason, summary
-            FROM tw_classifications
+SELECT post_id, author_handle, topic_query, raw_post,
+               classification, confidence, reason, summary
+        FROM rw_classifications
             WHERE confidence >= %s
             ORDER BY classified_at DESC
             """,

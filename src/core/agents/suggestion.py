@@ -6,9 +6,9 @@ from langgraph.prebuilt import create_react_agent
 
 from core.config import get_llm
 from core.middleware_config import build_middleware, apply_middleware, log_audit_summary
-from tools.reddit import get_trending_subreddits
-from tools.supabase_tools import get_interesting_tweets
-from tools.discord import send_discord_message
+from core.tools.reddit import get_trending_subreddits
+from core.tools.supabase_tools import get_interesting_posts
+from core.tools.discord import send_discord_message
 
 logger = logging.getLogger(__name__)
 
@@ -17,7 +17,7 @@ You are RedditWatch, a Reddit curation assistant. Your job is to generate weekly
 suggestions for new subreddits and authors to follow.
 
 Steps:
-1. Call get_interesting_tweets with days=7 to load this week's interesting Reddit posts.
+1. Call get_interesting_posts with days=7 to load this week's interesting Reddit posts.
 2. Analyze the corpus: which subreddits, authors, and topics appear repeatedly?
    Which are new compared to the seed list? Which drove the most interesting content?
 3. Call get_trending_subreddits to see what is currently trending (may return an empty
@@ -41,7 +41,7 @@ that in the message and suggest checking back next week.
 
 def build_suggestion_agent():
     tools = [
-        get_interesting_tweets,
+        get_interesting_posts,
         get_trending_subreddits,
         send_discord_message,
     ]

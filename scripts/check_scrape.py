@@ -34,7 +34,7 @@ def get_conn():
     conn = psycopg2.connect(os.environ["POSTGRES_URL"])
     conn.autocommit = True
     with conn.cursor() as cur:
-        cur.execute("SET search_path = tweetwatch")
+        cur.execute("SET search_path = redditwatch")
     return conn
 
 

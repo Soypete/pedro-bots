@@ -11,21 +11,22 @@ def _get_reddit() -> praw.Reddit:
     return praw.Reddit(
         client_id=os.environ["REDDIT_CLIENT_ID"],
         client_secret=os.environ["REDDIT_CLIENT_SECRET"],
-        user_agent=os.environ.get("REDDIT_USER_AGENT", "TweetWatch/1.0"),
+        user_agent=os.environ.get("REDDIT_USER_AGENT", "RedditWatch/1.0"),
         ratelimit_seconds=300,
     )
 
 
-def search_reddit_posts(subreddit: str, limit: int = 5) -> list[dict[str, Any]]:
+def search_reddit_posts(subreddit: str, limit: int = 5, min_upvotes: int = 10) -> list[dict[str, Any]]:
     """Fetch recent posts from a subreddit. subreddit should be like 'LocalLLaMA' (no r/)."""
-    logger.info("search_reddit_posts called: subreddit=%r limit=%d", subreddit, limit)
+    logger.info("search_reddit_posts called: subreddit=%r limit=%d min_upvotes=%d", subreddit, limit, min_upvotes)
     reddit = _get_reddit()
     subreddit_name = subreddit.lstrip("r/")
     try:
         sub = reddit.subreddit(subreddit_name)
         posts = []
-        for post in sub.new(limit=limit):
-            posts.append(
+        for post in sub.new(limit=limit * 2):
+            if post.score >= min_upvotes:
+                posts.append(
                 {
                     "post_id": post.id,
                     "text": f"{post.title}\n\n{post.selftext[:150] if post.selftext else ''}".strip(),

@@ -7,7 +7,7 @@ Accepted
 2026-03-25
 
 ## Context
-The original TweetWatch had a monolithic structure with agents and tools in the same directory. For maintainability and extensibility, we need a cleaner separation that allows:
+The original implementation had a monolithic structure with agents and tools in the same directory. For maintainability and extensibility, we need a cleaner separation that allows:
 - Multiple agents to share common tools and configuration
 - Easier testing of individual components
 - Clear boundaries between agent logic and shared infrastructure
@@ -30,7 +30,7 @@ src/
     config.py       # Configuration and LLM factory
     agents/
       __init__.py
-      monitor.py    # Tweet fetch + classify agent
+      monitor.py    # Reddit fetch + classify agent
       suggestion.py # Weekly suggestions agent
     tools/
       __init__.py

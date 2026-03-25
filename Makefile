@@ -1,10 +1,10 @@
-# Override with: make push IMAGE=zot.yourdomain/tweetwatch:latest
-IMAGE ?= zot.local/tweetwatch:latest
+# Override with: make push IMAGE=zot.yourdomain/redditwatch:latest
+IMAGE ?= zot.local/redditwatch:latest
 
 ENV_FLAGS = \
 	-e REDDIT_CLIENT_ID -e REDDIT_CLIENT_SECRET -e REDDIT_USER_AGENT \
-	-e TWILIO_ACCOUNT_SID -e TWILIO_AUTH_TOKEN -e TWILIO_FROM_NUMBER -e TWILIO_TO_NUMBER \
-	-e POSTGRES_URL \
+	-e DISCORD_BOT_TOKEN -e DISCORD_CHANNEL_ID -e DISCORD_NOTIFY_USER_ID \
+	-e SUPABASE_URL -e SUPABASE_SERVICE_KEY \
 	-e LLAMA_CPP_BASE_URL -e LLAMA_CPP_MODEL -e LOG_LEVEL \
 	--add-host=pedrogpt:100.121.229.114
 

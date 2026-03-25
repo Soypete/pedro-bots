@@ -1,7 +1,7 @@
 -- Replace Twitter hashtag seeds with Reddit subreddits
 -- Safe to re-run: ON CONFLICT DO NOTHING
 
-SET search_path = tweetwatch;
+SET search_path = redditwatch;
 
 -- Remove old hashtag-style seeds
 DELETE FROM tw_topics WHERE query LIKE '#%';

@@ -20,7 +20,7 @@
 
 ## 1. Overview
 
-TweetWatch is a self-hosted, LLM-powered agent that monitors Reddit on your behalf. It runs on your existing Kubernetes homelab, uses your local llama.cpp inference server for all LLM calls, and delivers curated tech updates to **Discord** via webhooks. The agent classifies posts for relevance, stores results in your existing Supabase instance, and generates weekly suggestions for new subreddits and keywords to follow. All classifications are stored with LLM reasoning to support future fine-tuning of the classifier.
+RedditWatch is a self-hosted, LLM-powered agent that monitors Reddit on your behalf. It runs on your existing Kubernetes homelab, uses your local llama.cpp inference server for all LLM calls, and delivers curated tech updates to **Discord** via webhooks. The agent classifies posts for relevance, stores results in your existing Supabase instance, and generates weekly suggestions for new subreddits and keywords to follow. All classifications are stored with LLM reasoning to support future fine-tuning of the classifier.
 
 > **⚠️ Critical Constraint: Reddit API Rate Limits**
 >
@@ -143,16 +143,16 @@ RedditWatcher Weekly Suggestions
 
 ## 7. Fine-Tuning Strategy (Future)
 
-Every classification written to `tw_classifications` is a training example. The schema captures everything needed to build a supervised dataset:
+Every classification written to `rw_classifications` is a training example. The schema captures everything needed to build a supervised dataset:
 
-- **Input:** raw tweet text + author + topic context
+- **Input:** raw post text + author + topic context
 - **Label:** `INTERESTING` or `NOT_INTERESTING`
 - **Reasoning:** the LLM's one-sentence explanation (useful for chain-of-thought fine-tuning)
 
 When you're ready to fine-tune:
 
 1. **Export training data** — query Supabase for all classifications where `confidence >= 0.8` to get the highest-quality examples first
-2. **Format for instruction tuning** — each row becomes a `(system_prompt, tweet_text, classification + reason)` triple in the format your target model expects (ChatML, Alpaca, etc.)
+2. **Format for instruction tuning** — each row becomes a `(system_prompt, post_text, classification + reason)` triple in the format your target model expects (ChatML, Alpaca, etc.)
 3. **Review labels** — spot-check a sample of NOT_INTERESTING classifications; these are easy to mislabel early on when the prompt is still being tuned
 4. **Fine-tune** — use Unsloth on your RTX 5090 against a base Qwen2.5 or Llama 3 model
 5. **Swap in** — update `LLAMA_CPP_MODEL` in the ConfigMap to point to the fine-tuned GGUF; no code changes required
@@ -164,7 +164,7 @@ The goal over time is a lightweight classifier that barely needs a system prompt
 ## 8. Success Metrics
 
 - Agent runs on schedule with < 2% missed windows
-- Classification latency < 30s per batch of 10 tweets on homelab hardware
+- Classification latency < 30s per batch of 10 posts on homelab hardware
 - Discord delivery success rate > 99% (webhook is synchronous)
 - Supabase write success rate > 99% per classification
 - Zero PII or API credentials in code or ConfigMaps — all via Kubernetes Secrets
@@ -177,7 +177,7 @@ The goal over time is a lightweight classifier that barely needs a system prompt
 
 ## 1. System Architecture
 
-TweetWatch is composed of two independent LangGraph agents orchestrated as Kubernetes CronJobs. Both agents share the same Python package and Supabase schema, differing only in their graph topology and schedule.
+RedditWatch is composed of two independent LangGraph agents orchestrated as Kubernetes CronJobs. Both agents share the same Python package and Supabase schema, differing only in their graph topology and schedule.
 
 ```
 +-------------------------------------------------------------------+
@@ -315,7 +315,7 @@ def send_discord_message(body: str, mentions: str = "") -> bool:
 
 ## 4. LLM Interface
 
-TweetWatch connects to your local llama.cpp server via LangChain's OpenAI-compatible chat interface. The server URL and model name are injected via environment variables, making the model fully swappable.
+RedditWatch connects to your local llama.cpp server via LangChain's OpenAI-compatible chat interface. The server URL and model name are injected via environment variables, making the model fully swappable.
 
 ```python
 # config.py
@@ -439,7 +439,7 @@ def build_monitor_agent():
     return create_deep_agent(
         llm=get_llm(),
         tools=[
-            search_tweets,
+            search_posts,
             load_active_topics,
             store_classification,
             get_seen_post_ids,
@@ -475,9 +475,9 @@ reddit-watcher/
 │   │   │   ├── monitor.py
 │   │   └── suggestion.py
 │   ├── tools/
-│   │   ├── twitter.py
+│   │   ├── reddit.py
 │   │   ├── supabase.py
-│   │   └── whatsapp.py
+│   │   └── discord.py
 │   ├── config.py
 │   └── main.py               # Entrypoint: --agent monitor|suggest
 ├── migrations/
@@ -549,11 +549,11 @@ spec:
 # Create Kubernetes secret — never commit values to git
 kubectl create secret generic reddit-watcher-secrets \
   --namespace=reddit-watcher \
-  --from-literal=TWITTER_BEARER_TOKEN='...' \
-  --from-literal=TWILIO_ACCOUNT_SID='...' \
-  --from-literal=TWILIO_AUTH_TOKEN='...' \
-  --from-literal=TWILIO_FROM_NUMBER='whatsapp:+1...' \
-  --from-literal=TWILIO_TO_NUMBER='whatsapp:+1YOURMOBILENUMBER' \
+  --from-literal=REDDIT_CLIENT_ID='...' \
+  --from-literal=REDDIT_CLIENT_SECRET='...' \
+  --from-literal=REDDIT_USER_AGENT='...' \
+  --from-literal=DISCORD_BOT_TOKEN='...' \
+  --from-literal=DISCORD_CHANNEL_ID='...' \
   --from-literal=SUPABASE_URL='...' \
   --from-literal=SUPABASE_SERVICE_KEY='...'
 ```
@@ -569,8 +569,8 @@ metadata:
 data:
   LLAMA_CPP_BASE_URL: "http://llamacpp-svc.homelab.svc.cluster.local:8080/v1"
   LLAMA_CPP_MODEL: "qwen2.5-14b-instruct"  # swap to change model, no redeploy needed
-  TWITTER_API_TIER: "basic"                 # "free" | "basic" | "pro"
-  MAX_TWEETS_PER_QUERY: "20"
+  LLAMA_CPP_MODEL: "qwen2.5-14b-instruct"
+  MAX_POSTS_PER_SUBREDDIT: "20"
   LOG_LEVEL: "INFO"
 ```
 
@@ -594,8 +594,8 @@ data:
 ## 9. Observability
 
 - Kubernetes job logs are the primary observability surface — `kubectl logs -n reddit-watcher <pod>`
-- Each agent run logs: topics fetched, tweets retrieved, classifications made, messages sent
-- `tw_classifications` in Supabase is the full audit trail — query it to debug classification quality over time
+- Each agent run logs: topics fetched, posts retrieved, classifications made, messages sent
+- `rw_classifications` in Supabase is the full audit trail — query it to debug classification quality over time
 - Failed runs trigger Kubernetes job retry (`restartPolicy: OnFailure`); alert on `failedJobsHistoryLimit` breach via existing Prometheus/Grafana
 - LangSmith tracing is optional: set `LANGSMITH_TRACING=true` and `LANGSMITH_API_KEY` to trace individual agent runs
 

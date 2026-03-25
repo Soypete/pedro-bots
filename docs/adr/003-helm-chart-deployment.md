@@ -7,7 +7,7 @@ Accepted
 2026-03-25
 
 ## Context
-The original TweetWatch deployment used raw Kubernetes YAML manifests. For better manageability, we need a Helm chart that:
+The original deployment used raw Kubernetes YAML manifests. For better manageability, we need a Helm chart that:
 - Provides configurable values for schedules, image, and secrets
 - Supports both monitor and suggestion CronJobs from a single chart
 - Integrates with existing ConfigMap and Secret patterns

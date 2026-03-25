@@ -13,7 +13,7 @@ def _get_conn():
     conn = psycopg2.connect(os.environ["POSTGRES_URL"])
     conn.autocommit = True
     with conn.cursor() as cur:
-        cur.execute("SET search_path = tweetwatch")
+        cur.execute("SET search_path = redditwatch")
     return conn
 
 
@@ -30,7 +30,7 @@ def load_active_topics() -> list[str]:
         conn.close()
 
 
-def get_seen_tweet_ids() -> set[str]:
+def get_seen_post_ids() -> set[str]:
     """Return set of all post_ids already classified (for deduplication)."""
     conn = _get_conn()
     try:
@@ -76,7 +76,28 @@ def store_classification(post: dict, classification: dict) -> bool:
         conn.close()
 
 
-def get_interesting_tweets(days: int = 7) -> list[dict[str, Any]]:
+def add_topic(query: str, category: str, priority: str = "medium") -> bool:
+    """Add a new topic to rw_topics."""
+    conn = _get_conn()
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                INSERT INTO rw_topics (query, category, priority, active)
+                VALUES (%s, %s, %s, true)
+                ON CONFLICT (query) DO NOTHING
+                """,
+                (query, category, priority),
+            )
+        return True
+    except Exception as e:
+        logger.error("Failed to add topic %s: %s", query, e)
+        return False
+    finally:
+        conn.close()
+
+
+def get_interesting_posts(days: int = 7) -> list[dict[str, Any]]:
     """Retrieve INTERESTING-classified posts from the last N days."""
     conn = _get_conn()
     try:

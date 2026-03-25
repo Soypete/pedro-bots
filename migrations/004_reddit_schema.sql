@@ -1,7 +1,7 @@
 -- Drop Twitter-era tables and recreate with Reddit-appropriate column names.
 -- This discards all old Twitter classification data.
 
-SET search_path = tweetwatch;
+SET search_path = redditwatch;
 
 DROP TABLE IF EXISTS tw_classifications;
 DROP TABLE IF EXISTS tw_topics;

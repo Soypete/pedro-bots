@@ -1,7 +1,7 @@
 -- Seed initial monitored topics
 -- Safe to re-run (ON CONFLICT DO NOTHING)
 
-INSERT INTO tweetwatch.tw_topics (query, category, priority) VALUES
+INSERT INTO redditwatch.tw_topics (query, category, priority) VALUES
   ('#LLM',                   'AI / LLM',             'high'),
   ('#AIAgents',              'AI / LLM',             'high'),
   ('#LocalAI',               'AI / LLM',             'high'),

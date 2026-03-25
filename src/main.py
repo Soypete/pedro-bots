@@ -16,12 +16,12 @@ logging.basicConfig(
 
 
 def cli() -> None:
-    parser = argparse.ArgumentParser(description="TweetWatch agent runner")
+    parser = argparse.ArgumentParser(description="RedditWatch agent runner")
     parser.add_argument(
         "--agent",
         choices=["monitor", "suggest"],
         required=True,
-        help="Which agent to run: 'monitor' (tweet digest) or 'suggest' (weekly suggestions)",
+        help="Which agent to run: 'monitor' (Reddit digest) or 'suggest' (weekly suggestions)",
     )
     args = parser.parse_args()
 

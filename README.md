@@ -64,6 +64,6 @@ helm install reddit-watcher charts/reddit-watcher
 
 ## Documentation
 
-- [PRD & Engineering Design](docs/TweetWatch-PRD-EDD.md)
+- [PRD & Engineering Design](docs/RedditWatch-PRD-EDD.md)
 - [Architecture Decision Records](docs/adr/)
 - [ROADMAP.md](ROADMAP.md)

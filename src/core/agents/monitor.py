@@ -7,7 +7,7 @@ from langchain_core.messages import HumanMessage, SystemMessage
 from core.config import get_llm
 from core.middleware_config import build_middleware, log_audit_summary
 from core.tools.reddit import search_reddit_posts
-from core.tools.supabase_tools import load_active_topics, store_classification, get_seen_tweet_ids
+from core.tools.supabase_tools import load_active_topics, store_classification, get_seen_post_ids
 from core.tools.discord import send_discord_message, is_high_signal
 
 logger = logging.getLogger(__name__)
@@ -47,7 +47,7 @@ def _format_digest(interesting: list[tuple], total_fetched: int) -> str:
     now = datetime.now(timezone.utc).strftime("%H:%M")
     # Sort by confidence descending, cap at top N
     top = sorted(interesting, key=lambda x: x[1].get("confidence", 0), reverse=True)[:_MAX_DIGEST_POSTS]
-    lines = [f"RedditWatch — {now} Digest\n"]
+    lines = [f"check out this:\n"]
     for i, (post, clf) in enumerate(top, 1):
         lines.append(f"{i}. [r/{post.get('topic_query')}] u/{post.get('author_handle')}")
         if clf.get("summary"):
@@ -67,7 +67,7 @@ def run_monitor() -> None:
     if not topics:
         logger.warning("No active topics found — aborting")
         return
-    seen_ids = get_seen_tweet_ids()
+    seen_ids = get_seen_post_ids()
     logger.info("Loaded %d topics, %d seen post IDs", len(topics), len(seen_ids))
 
     # 2. Fetch posts from each subreddit

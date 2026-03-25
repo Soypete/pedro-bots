@@ -1,8 +1,8 @@
 apiVersion: batch/v1
 kind: CronJob
 metadata:
-  name: tweetwatch-suggest
-  namespace: tweetwatch
+  name: redditwatch-suggest
+  namespace: redditwatch
 spec:
   # Monday 09:00 Mountain Time (UTC-6 MST)
   # Update to "0 16 * * 1" during MDT (UTC-7).
@@ -16,11 +16,11 @@ spec:
         spec:
           restartPolicy: OnFailure
           containers:
-            - name: tweetwatch
-              image: registry.local/tweetwatch:latest
+            - name: redditwatch
+              image: registry.local/redditwatch:latest
               command: ["--agent", "suggest"]
               envFrom:
                 - secretRef:
-                    name: tweetwatch-secrets
+                    name: redditwatch-secrets
                 - configMapRef:
-                    name: tweetwatch-config
+                    name: redditwatch-config

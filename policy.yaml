@@ -2,12 +2,12 @@
 # Enforced on every tool call via middleware-py
 
 rules:
-  # Rate-limit WhatsApp sends to prevent spam (max 5 per hour)
-  - name: whatsapp_rate_limit
-    tools: [send_whatsapp_message]
+  # Rate-limit Discord sends to prevent spam (max 3 per hour)
+  - name: discord_rate_limit
+    tools: [send_discord_message]
     action: allow
     max_rate:
-      count: 5
+      count: 3
       window: 3600
 
   # Read-only Reddit and DB tools — always allow
@@ -15,14 +15,15 @@ rules:
     tools:
       - search_reddit_posts
       - load_active_topics
-      - get_seen_tweet_ids
-      - get_interesting_tweets
-      - get_trending_subreddits
+      - get_seen_post_ids
+      - get_interesting_posts
     action: allow
 
-  # DB write — always allow (training data)
-  - name: allow_store_classification
-    tools: [store_classification]
+  # DB write — always allow
+  - name: allow_db_write
+    tools:
+      - store_classification
+      - add_topic
     action: allow
 
 # Deny anything not explicitly listed above

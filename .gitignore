@@ -17,4 +17,5 @@ vendor/
 local-packages/
 
 # Local secrets (real values — never commit)
+.env
 .env.local

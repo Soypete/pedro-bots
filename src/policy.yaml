@@ -1,26 +1,17 @@
 rules:
-  # Rate-limit Twitter searches — Basic tier allows limited requests
-  - name: rate-limit-twitter-search
+  # Rate-limit Reddit searches
+  - name: rate-limit-reddit-search
     tools:
-      - search_tweets
+      - search_reddit_posts
     action: allow
     max_rate:
-      count: 30
-      window: 900  # 30 calls per 15 minutes (Twitter rate limit window)
+      count: 60
+      window: 900  # 60 calls per 15 minutes
 
-  # Rate-limit trending topics — heavier endpoint
-  - name: rate-limit-trending
+  # Rate-limit Discord — avoid duplicate/spam messages per run
+  - name: rate-limit-discord
     tools:
-      - get_trending_topics
-    action: allow
-    max_rate:
-      count: 5
-      window: 900
-
-  # Rate-limit WhatsApp — avoid duplicate/spam messages per run
-  - name: rate-limit-whatsapp
-    tools:
-      - send_whatsapp_message
+      - send_discord_message
     action: allow
     max_rate:
       count: 3
@@ -30,9 +21,10 @@ rules:
   - name: allow-db-tools
     tools:
       - load_active_topics
-      - get_seen_tweet_ids
+      - get_seen_post_ids
       - store_classification
-      - get_interesting_tweets
+      - get_interesting_posts
+      - add_topic
     action: allow
 
 default_deny: false
