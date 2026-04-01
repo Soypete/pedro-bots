@@ -1067,7 +1067,7 @@ packages:
 - pypi: ./
   name: pedro-bots
   version: 0.1.0
-  sha256: 02e68ee0dfcb1b211036c5824bb0d64feb57cca00526f3010646532284945c59
+  sha256: 27dad2700a28ce16200a12b255889320280b909db98013df2c0dd82300c8e956
   requires_dist:
   - langchain>=0.3
   - langgraph>=0.2

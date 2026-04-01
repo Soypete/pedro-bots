@@ -14,34 +14,39 @@ spec:
   jobTemplate:
     spec:
       template:
+        metadata:
+          annotations:
+            vault.hashicorp.com/agent-inject: "true"
+            vault.hashicorp.com/role: "{{ .Values.vault.role }}"
+            vault.hashicorp.com/agent-inject-secret-reddit: "{{ .Values.vault.redditPath }}"
+            vault.hashicorp.com/agent-inject-secret-discord: "{{ .Values.vault.discordPath }}"
+            vault.hashicorp.com/agent-inject-secret-supabase: "{{ .Values.vault.supabasePath }}"
+            vault.hashicorp.com/agent-inject-template-reddit: |
+              {{`{{- with secret "`}}{{ .Values.vault.redditPath }}{{`" -}}`}}
+              {{`export REDDIT_CLIENT_ID="{{ .Data.data.reddit_client_id }}"`}}
+              {{`export REDDIT_CLIENT_SECRET="{{ .Data.data.reddit_client_secret }}"`}}
+              {{`export REDDIT_USER_AGENT="{{ .Data.data.reddit_user_agent }}"`}}
+              {{`{{- end }}`}}
+            vault.hashicorp.com/agent-inject-template-discord: |
+              {{`{{- with secret "`}}{{ .Values.vault.discordPath }}{{`" -}}`}}
+              {{`export DISCORD_BOT_TOKEN="{{ .Data.data.client_secret }}"`}}
+              {{`export DISCORD_CHANNEL_ID="{{ .Data.data.permission }}"`}}
+              {{`export DISCORD_NOTIFY_USER_ID="{{ .Data.data.public_key }}"`}}
+              {{`{{- end }}`}}
+            vault.hashicorp.com/agent-inject-template-supabase: |
+              {{`{{- with secret "`}}{{ .Values.vault.supabasePath }}{{`" -}}`}}
+              {{`export SUPABASE_URL="{{ .Data.data.url }}"`}}
+              {{`export SUPABASE_SERVICE_KEY="{{ .Data.data.private_key }}"`}}
+              {{`export POSTGRES_URL="{{ .Data.data.postgres_url }}"`}}
+              {{`{{- end }}`}}
         spec:
           restartPolicy: OnFailure
           containers:
             - name: {{ .Chart.Name }}
               image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
               imagePullPolicy: {{ .Values.image.pullPolicy }}
-              command: ["python", "-m", "main", "--agent", "suggest"]
-              env:
-                - name: LLAMA_CPP_BASE_URL
-                  value: {{ .Values.config.llamaCppBaseUrl | quote }}
-                - name: LLAMA_CPP_MODEL
-                  value: {{ .Values.config.llamaCppModel | quote }}
-                - name: LOG_LEVEL
-                  value: {{ .Values.config.logLevel | quote }}
-                - name: DISCORD_WEBHOOK_URL
-                  valueFrom:
-                    secretKeyRef:
-                      name: {{ include "reddit-watcher.fullname" . }}-secrets
-                      key: discord-webhook-url
-                      optional: true
-                - name: DISCORD_NOTIFY_USER_ID
-                  valueFrom:
-                    secretKeyRef:
-                      name: {{ include "reddit-watcher.fullname" . }}-secrets
-                      key: discord-notify-user-id
-                      optional: true
+              command: ["/bin/sh", "-c"]
+              args: [". /vault/secrets/reddit && . /vault/secrets/discord && . /vault/secrets/supabase && python -m main --agent suggest"]
               envFrom:
-                - secretRef:
-                    name: {{ include "reddit-watcher.fullname" . }}-secrets
                 - configMapRef:
                     name: {{ include "reddit-watcher.fullname" . }}-config
