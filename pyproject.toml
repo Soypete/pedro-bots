@@ -14,6 +14,8 @@ dependencies = [
     "requests>=2.31",
     "pydantic>=2.0",
     "certifi>=2024.0",
+    "pytest>=8.0",
+    "pytest-mock>=3.0",
 ]
 
 [project.scripts]
@@ -35,6 +37,10 @@ middleware-py = { path = "/Users/miriahpeterson/Code/go-projects/pedro-agentware
 [tool.pixi.tasks]
 monitor    = { cmd = "op run --env-file=.env -- python -m main --agent monitor", env = { PYTHONPATH = "src" } }
 suggest    = { cmd = "op run --env-file=.env -- python -m main --agent suggest", env = { PYTHONPATH = "src" } }
+dry-run    = { cmd = "op run --env-file=.env -- python -m main --agent monitor --dry-run", env = { PYTHONPATH = "src" } }
+test       = { cmd = "python -m pytest tests/ -v", env = { PYTHONPATH = "src" } }
+eval       = { cmd = "op run --env-file=.env -- python scripts/eval_classification.py", env = { PYTHONPATH = "src" } }
+eval-integration = { cmd = "op run --env-file=.env -- python -m pytest tests/test_monitor_integration.py -v", env = { PYTHONPATH = "src" } }
 export     = { cmd = "op run --env-file=.env -- python scripts/export_training_data.py" }
 migrate    = { cmd = "op run --env-file=.env -- bash scripts/migrate.sh" }
 check      = { cmd = "op run --env-file=.env -- python scripts/check_scrape.py", env = { PYTHONPATH = "src" } }

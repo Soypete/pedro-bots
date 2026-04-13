@@ -17,7 +17,7 @@ spec:
           restartPolicy: OnFailure
           containers:
             - name: redditwatch
-              image: registry.local/redditwatch:latest
+              image: zot.local/redditwatch:latest
               command: ["--agent", "suggest"]
               envFrom:
                 - secretRef:

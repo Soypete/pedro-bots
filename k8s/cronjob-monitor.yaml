@@ -12,12 +12,13 @@ spec:
   failedJobsHistoryLimit: 5
   jobTemplate:
     spec:
+      activeDeadlineSeconds: 3600  # kill job after 1h so hung runs never block the next schedule
       template:
         spec:
           restartPolicy: OnFailure
           containers:
             - name: redditwatch
-              image: registry.local/redditwatch:latest
+              image: zot.local/redditwatch:latest
               command: ["--agent", "monitor"]
               envFrom:
                 - secretRef:

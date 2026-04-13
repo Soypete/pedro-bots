@@ -23,10 +23,16 @@ def cli() -> None:
         required=True,
         help="Which agent to run: 'monitor' (Reddit digest) or 'suggest' (weekly suggestions)",
     )
+    parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        default=False,
+        help="Fetch and classify but print digest to stdout instead of sending to Discord (monitor only)",
+    )
     args = parser.parse_args()
 
     if args.agent == "monitor":
-        run_monitor()
+        run_monitor(dry_run=args.dry_run)
     else:
         run_suggestion()
 

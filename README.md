@@ -12,19 +12,57 @@ A self-hosted LLM-powered agent that monitors Reddit and delivers curated digest
 
 ## Architecture
 
+RedditWatch consists of two LangGraph agents that share a Supabase database:
+
+**MonitorAgent** (runs 3x/day via Kubernetes CronJob)
+- Loads active topics from `rw_topics` table
+- Fetches posts from Reddit using PRAW
+- Classifies each post with the local LLM
+- Stores results in `rw_classifications`
+- Sends interesting posts to Discord
+
+**SuggestionAgent** (runs weekly)
+- Loads last 7 days of classifications from Supabase
+- Analyzes patterns to find new subreddit/keyword suggestions
+- Sends recommendations to Discord
+
 ```
 src/
   main.py           # CLI entry: --agent monitor|suggest
   core/
     config.py       # LLM factory, env var loading
     agents/
-      monitor.py    # Reddit fetch + classify agent
-      suggestion.py # Weekly suggestions agent
+      monitor.py    # MonitorAgent LangGraph definition
+      suggestion.py # SuggestionAgent LangGraph definition
     tools/
-      reddit.py     # Reddit API client
+      reddit.py     # Reddit API client (PRAW)
       discord.py    # Discord webhook integration
       supabase_tools.py # Database operations
 ```
+
+## Monitored Subreddits
+
+Topics are stored in `rw_topics` in Supabase and loaded at each run. Default subreddits:
+
+| Subreddit | Category | Priority |
+|-----------|----------|----------|
+| LocalLLaMA | AI/LLM | 10 |
+| MachineLearning | AI/LLM | 10 |
+| ollama | AI/LLM | 9 |
+| OpenSourceAI | AI/LLM | 8 |
+| singularity | AI/LLM | 8 |
+| artificial | AI/LLM | 7 |
+| kubernetes | Infrastructure | 10 |
+| devops | Infrastructure | 8 |
+| selfhosted | Infrastructure | 7 |
+| golang | Software Eng | 10 |
+| Python | Software Eng | 9 |
+| programming | Software Eng | 7 |
+| startups | Startups/VC | 9 |
+| YCombinator | Startups/VC | 9 |
+| Physics | Physics | 8 |
+
+To add/remove topics, update the `rw_topics` table directly in Supabase. Set `active = false` to pause a subreddit without deleting it.
 
 ## Setup
 
@@ -64,6 +102,7 @@ helm install reddit-watcher charts/reddit-watcher
 
 ## Documentation
 
+- [Deployment Guide](docs/deployment.md)
 - [PRD & Engineering Design](docs/RedditWatch-PRD-EDD.md)
 - [Architecture Decision Records](docs/adr/)
 - [ROADMAP.md](ROADMAP.md)

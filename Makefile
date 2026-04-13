@@ -1,5 +1,5 @@
 # Override with: make push IMAGE=zot.yourdomain/redditwatch:latest
-IMAGE ?= zot.local/redditwatch:latest
+IMAGE ?= 100.81.89.62:5000/redditwatch:latest
 
 ENV_FLAGS = \
 	-e REDDIT_CLIENT_ID -e REDDIT_CLIENT_SECRET -e REDDIT_USER_AGENT \
@@ -13,7 +13,7 @@ ENV_FLAGS = \
 # Rebuild middleware-py wheel then build the Podman image
 build:
 	pixi run build-wheel
-	podman build -t $(IMAGE) .
+	podman build --platform linux/amd64 -t $(IMAGE) .
 
 # Run the monitor agent locally (op injects secrets from .env)
 monitor: build

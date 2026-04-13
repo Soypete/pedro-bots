@@ -6,7 +6,11 @@ metadata:
 data:
   # Swap model by editing this value — no redeploy of code required
   LLAMA_CPP_BASE_URL: "http://llamacpp-svc.homelab.svc.cluster.local:8080/v1"
-  LLAMA_CPP_MODEL: "qwen2.5-14b-instruct"
+  LLAMA_CPP_MODEL: "nemotron-3-super-120b"
   MAX_POSTS_PER_SUBREDDIT: "20"
   LOG_LEVEL: "INFO"
-  LOG_LEVEL: "INFO"
+  # Fetch window and filtering
+  REDDIT_WINDOW_HOURS: "168"
+  REDDIT_MIN_UPVOTES: "25"
+  REDDIT_CLASSIFY_MIN_SCORE: "50"
+  REDDIT_FETCH_SAFETY_CAP: "500"
