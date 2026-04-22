@@ -1,0 +1,54 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: {{ include "reddit-watcher.fullname" . }}-social
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "reddit-watcher.labels" . | nindent 4 }}
+    app: social
+spec:
+  schedule: {{ .Values.social.schedule | quote }}
+  concurrencyPolicy: {{ .Values.social.concurrencyPolicy }}
+  successfulJobsHistoryLimit: {{ .Values.social.successfulJobsHistoryLimit }}
+  failedJobsHistoryLimit: {{ .Values.social.failedJobsHistoryLimit }}
+  jobTemplate:
+    spec:
+      activeDeadlineSeconds: 3600
+      template:
+        metadata:
+          annotations:
+            vault.hashicorp.com/agent-inject: "true"
+            vault.hashicorp.com/agent-pre-populate-only: "true"
+            vault.hashicorp.com/role: "{{ .Values.vault.role }}"
+            vault.hashicorp.com/agent-inject-secret-reddit: "{{ .Values.vault.redditPath }}"
+            vault.hashicorp.com/agent-inject-secret-discord: "{{ .Values.vault.discordPath }}"
+            vault.hashicorp.com/agent-inject-secret-supabase: "{{ .Values.vault.supabasePath }}"
+            vault.hashicorp.com/agent-inject-template-reddit: |
+              {{`{{- with secret "`}}{{ .Values.vault.redditPath }}{{`" -}}`}}
+              {{`export REDDIT_CLIENT_ID="{{ .Data.data.reddit_client_id }}"`}}
+              {{`export REDDIT_CLIENT_SECRET="{{ .Data.data.reddit_client_secret }}"`}}
+              {{`export REDDIT_USER_AGENT="{{ .Data.data.reddit_user_agent }}"`}}
+              {{`{{- end }}`}}
+            vault.hashicorp.com/agent-inject-template-discord: |
+              {{`{{- with secret "`}}{{ .Values.vault.discordPath }}{{`" -}}`}}
+              {{`export DISCORD_BOT_TOKEN="{{ .Data.data.client_secret }}"`}}
+              {{`export DISCORD_CHANNEL_ID="{{ .Data.data.permission }}"`}}
+              {{`export DISCORD_NOTIFY_USER_ID="{{ .Data.data.public_key }}"`}}
+              {{`{{- end }}`}}
+            vault.hashicorp.com/agent-inject-template-supabase: |
+              {{`{{- with secret "`}}{{ .Values.vault.supabasePath }}{{`" -}}`}}
+              {{`export SUPABASE_URL="{{ .Data.data.url }}"`}}
+              {{`export SUPABASE_SERVICE_KEY="{{ .Data.data.private_key }}"`}}
+              {{`export POSTGRES_URL="{{ .Data.data.postgres_url }}"`}}
+              {{`{{- end }}`}}
+        spec:
+          restartPolicy: OnFailure
+          containers:
+            - name: {{ .Chart.Name }}
+              image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+              imagePullPolicy: {{ .Values.image.pullPolicy }}
+              command: ["/bin/sh", "-c"]
+              args: [". /vault/secrets/reddit && . /vault/secrets/discord && . /vault/secrets/supabase && python -m main agent --agent social-poster"]
+              envFrom:
+                - configMapRef:
+                    name: {{ include "reddit-watcher.fullname" . }}-config

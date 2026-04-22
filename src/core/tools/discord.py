@@ -53,7 +53,7 @@ def _discord_worker():
     _loop.run_until_complete(_client.connect())
 
 
-def _ensure_connected():
+def _ensure_connected(channel: str = None):
     """Ensure Discord client is connected in background thread."""
     global _client, _channel, _thread, _ready_event
 
@@ -71,30 +71,33 @@ def _ensure_connected():
             logger.error("Discord client failed to connect (timeout)")
             return None
 
+    channel_name = channel or DISCORD_CHANNEL_NAME
+    
     for guild in _client.guilds:
-        for channel in guild.text_channels:
-            if channel.name == DISCORD_CHANNEL_NAME:
-                _channel = channel
-                logger.info("Found channel %s with ID %s", DISCORD_CHANNEL_NAME, channel.id)
+        for ch in guild.text_channels:
+            if ch.name == channel_name:
+                _channel = ch
+                logger.info("Found channel %s with ID %s", channel_name, ch.id)
                 return _channel
 
-    logger.error("Channel %s not found", DISCORD_CHANNEL_NAME)
+    logger.error("Channel %s not found", channel_name)
     return None
 
 
-def send_discord_message(body: str, high_signal: bool = False) -> bool:
+def send_discord_message(body: str, high_signal: bool = False, channel: str = None) -> bool:
     """Send a message to Discord via bot session.
     
     Args:
         body: The message content to send
         high_signal: If True, ping @here for high-signal posts (confidence >= threshold)
+        channel: Channel name to post to (defaults to DISCORD_CHANNEL_NAME)
     """
     if "-- 0 of" in body or "No relevant" in body:
         logger.info("Skipping Discord send — no interesting posts in digest")
         return True
 
     try:
-        channel = _ensure_connected()
+        channel = _ensure_connected(channel)
     except Exception as e:
         logger.error("Failed to get Discord channel: %s", e)
         return False

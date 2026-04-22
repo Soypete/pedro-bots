@@ -19,3 +19,15 @@ local-packages/
 # Local secrets (real values — never commit)
 .env
 .env.local
+
+# Graphify output
+graphify-out/
+
+# Wiki output
+wiki/
+
+# Generated config
+alembic.ini
+
+# Test/cache
+.pytest_cache/

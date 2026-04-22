@@ -21,7 +21,11 @@ monitor: build
 
 # Run the suggestion agent locally (op injects secrets from .env)
 suggest: build
-	op run --env-file=.env -- podman run --rm $(ENV_FLAGS) $(IMAGE) --agent suggest
+	op run --env-file=.env -- podman run --rm $(ENV_FLAGS) $(IMAGE) agent --agent suggest
+
+# Run the social poster agent locally
+social: build
+	op run --env-file=.env -- podman run --rm $(ENV_FLAGS) $(IMAGE) agent --agent social-poster
 
 # Push to OCI registry
 push:

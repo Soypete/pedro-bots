@@ -1,43 +1,18 @@
-# Local testing only — secrets are injected by op run on the host.
-#
-# Usage:
-#   op run --env-file=.env -- docker compose run --rm monitor
-#   op run --env-file=.env -- docker compose run --rm suggest
-#
-# Or build + run in one step:
-#   make monitor
+version: '3.8'
 
 services:
-  monitor:
-    build: .
-    command: ["monitor"]
+  postgres:
+    image: postgres:16
     environment:
-      - REDDIT_CLIENT_ID
-      - REDDIT_CLIENT_SECRET
-      - REDDIT_USER_AGENT
-      - DISCORD_BOT_TOKEN
-      - DISCORD_CHANNEL_ID
-      - DISCORD_NOTIFY_USER_ID
-      - SUPABASE_URL
-      - SUPABASE_SERVICE_KEY
-      - LLAMA_CPP_BASE_URL
-      - LLAMA_CPP_MODEL
-      - MAX_POSTS_PER_SUBREDDIT
-      - LOG_LEVEL
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: pedro_bots
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    # Run with root to avoid permission issues
+    user: postgres
 
-  suggest:
-    build: .
-    command: ["suggest"]
-    environment:
-      - REDDIT_CLIENT_ID
-      - REDDIT_CLIENT_SECRET
-      - REDDIT_USER_AGENT
-      - DISCORD_BOT_TOKEN
-      - DISCORD_CHANNEL_ID
-      - DISCORD_NOTIFY_USER_ID
-      - SUPABASE_URL
-      - SUPABASE_SERVICE_KEY
-      - LLAMA_CPP_BASE_URL
-      - LLAMA_CPP_MODEL
-      - MAX_POSTS_PER_SUBREDDIT
-      - LOG_LEVEL
+volumes:
+  postgres_data:

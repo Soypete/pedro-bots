@@ -6,8 +6,8 @@ image:
   tag: "latest"
 
 imagePullSecrets: []
-nameOverride: ""
-fullnameOverride: ""
+nameOverride: "pedro-agents"
+fullnameOverride: "pedro-agents"
 
 serviceAccount:
   create: false
@@ -77,7 +77,13 @@ monitor:
   failedJobsHistoryLimit: 5
 
 suggestion:
-  schedule: "0 */4 * * *"  # Every 4 hours
+  schedule: "0 15 * * 1"  # Monday 09:00 Mountain Time
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 5
+
+social:
+  schedule: "0 14 * * *"  # 08:00 Mountain Time (UTC-6 MDT, change to "0 15" for UTC-7 MST)
   concurrencyPolicy: Forbid
   successfulJobsHistoryLimit: 3
   failedJobsHistoryLimit: 5
@@ -89,7 +95,7 @@ discord:
 
 config:
   llamaCppBaseUrl: "http://100.121.229.114:8080/v1"
-  llamaCppModel: "nemotron-3-super-120b"
+  llamaCppModel: "qwen3-coder-30b"
   logLevel: "INFO"
   maxPostsPerQuery: 20
 

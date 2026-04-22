@@ -1,0 +1,12 @@
+apiVersion: v2
+name: pedro-agents
+description: Pedro Bots - LLM-powered agents for Reddit monitoring, suggestions, and social posting
+type: application
+version: 0.2.0
+appVersion: "latest"
+keywords:
+  - reddit
+  - social
+  - langchain
+  - discord
+  - llm
