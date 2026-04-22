@@ -14,6 +14,8 @@ dependencies = [
     "requests>=2.31",
     "pydantic>=2.0",
     "certifi>=2024.0",
+    "feedparser>=6.0",
+    "atproto>=0.0.15",
     "pytest>=8.0",
     "pytest-mock>=3.0",
 ]
@@ -32,12 +34,13 @@ python = "~=3.12"
 # When middleware-py is published to PyPI, replace the path with: middleware-py = ">=0.1.0"
 [tool.pixi.pypi-dependencies]
 pedro-bots = { path = ".", editable = true }
-middleware-py = { path = "/Users/miriahpeterson/Code/go-projects/pedro-agentware/middleware_py", editable = true }
+pedro-agentware = { path = "/Users/soypete/code/pedro/pedro-agentware/python", editable = true }
 
 [tool.pixi.tasks]
-monitor    = { cmd = "op run --env-file=.env -- python -m main --agent monitor", env = { PYTHONPATH = "src" } }
-suggest    = { cmd = "op run --env-file=.env -- python -m main --agent suggest", env = { PYTHONPATH = "src" } }
-dry-run    = { cmd = "op run --env-file=.env -- python -m main --agent monitor --dry-run", env = { PYTHONPATH = "src" } }
+monitor    = { cmd = "op run --env-file=.env -- python -m main agent --agent monitor", env = { PYTHONPATH = "src" } }
+suggest    = { cmd = "op run --env-file=.env -- python -m main agent --agent suggest", env = { PYTHONPATH = "src" } }
+social     = { cmd = "op run --env-file=.env -- python -m main agent --agent social-poster", env = { PYTHONPATH = "src" } }
+dry-run    = { cmd = "op run --env-file=.env -- python -m main agent --agent monitor --dry-run", env = { PYTHONPATH = "src" } }
 test       = { cmd = "python -m pytest tests/ -v", env = { PYTHONPATH = "src" } }
 eval       = { cmd = "op run --env-file=.env -- python scripts/eval_classification.py", env = { PYTHONPATH = "src" } }
 eval-integration = { cmd = "op run --env-file=.env -- python -m pytest tests/test_monitor_integration.py -v", env = { PYTHONPATH = "src" } }
@@ -45,7 +48,8 @@ export     = { cmd = "op run --env-file=.env -- python scripts/export_training_d
 migrate    = { cmd = "op run --env-file=.env -- bash scripts/migrate.sh" }
 check      = { cmd = "op run --env-file=.env -- python scripts/check_scrape.py", env = { PYTHONPATH = "src" } }
 # Docker runtime tasks — secrets already injected as env vars, no op run needed
-docker-monitor = { cmd = "python -m main --agent monitor", env = { PYTHONPATH = "src" } }
-docker-suggest = { cmd = "python -m main --agent suggest", env = { PYTHONPATH = "src" } }
+docker-monitor = { cmd = "python -m main agent --agent monitor", env = { PYTHONPATH = "src" } }
+docker-suggest = { cmd = "python -m main agent --agent suggest", env = { PYTHONPATH = "src" } }
+docker-social  = { cmd = "python -m main agent --agent social-poster", env = { PYTHONPATH = "src" } }
 # Rebuild the local middleware-py wheel after changes to middleware-py source
 build-wheel = { cmd = "uv build --wheel /Users/miriahpeterson/Code/go-projects/pedro-agentware/middleware_py --out-dir ./local-packages/" }

@@ -1,0 +1,55 @@
+wing: pedro_bots
+rooms:
+- name: migrations
+  description: Files from migrations/
+  keywords:
+  - migrations
+  - migrations
+- name: k8s
+  description: Files from k8s/
+  keywords:
+  - k8s
+  - k8s
+- name: local_packages
+  description: Files from local-packages/
+  keywords:
+  - local_packages
+  - local-packages
+- name: testing
+  description: Files from tests/
+  keywords:
+  - testing
+  - tests
+- name: charts
+  description: Files from charts/
+  keywords:
+  - charts
+  - charts
+- name: documentation
+  description: Files from wiki/
+  keywords:
+  - documentation
+  - wiki
+- name: graphify_out
+  description: Files from graphify-out/
+  keywords:
+  - graphify_out
+  - graphify-out
+- name: scripts
+  description: Files from scripts/
+  keywords:
+  - scripts
+  - scripts
+- name: alembic
+  description: Files from alembic/
+  keywords:
+  - alembic
+  - alembic
+- name: src
+  description: Files from src/
+  keywords:
+  - src
+  - src
+- name: general
+  description: Files that don't fit other rooms
+  keywords: []

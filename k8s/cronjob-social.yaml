@@ -1,0 +1,27 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: pedrobots-social
+  namespace: redditwatch
+spec:
+  # 08:00 Mountain Time (UTC-6 MST / UTC-7 MDT)
+  # Currently set for MST (UTC-6). Update to "0 14 * * *" during MDT.
+  schedule: "0 14 * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 5
+  jobTemplate:
+    spec:
+      activeDeadlineSeconds: 3600
+      template:
+        spec:
+          restartPolicy: OnFailure
+          containers:
+            - name: pedrobots
+              image: zot.local/redditwatch:latest
+              command: ["python", "-m", "main", "agent", "--agent", "social-poster"]
+              envFrom:
+                - secretRef:
+                    name: redditwatch-secrets
+                - configMapRef:
+                    name: redditwatch-config
