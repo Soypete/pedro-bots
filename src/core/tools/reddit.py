@@ -11,6 +11,24 @@ _DEFAULT_MAX_POSTS = int(os.environ.get("MAX_POSTS_PER_SUBREDDIT", "20"))
 WINDOW_HOURS = int(os.environ.get("REDDIT_WINDOW_HOURS", "168"))  # default 7 days
 _MIN_UPVOTES_DEFAULT = int(os.environ.get("REDDIT_MIN_UPVOTES", "25"))
 _FETCH_SAFETY_CAP = int(os.environ.get("REDDIT_FETCH_SAFETY_CAP", "500"))
+_MAX_COMMENTS = int(os.environ.get("REDDIT_MAX_COMMENTS", "5"))
+_MAX_POSTS_WITH_COMMENTS = int(os.environ.get("REDDIT_MAX_POSTS_WITH_COMMENTS", "10"))
+
+
+def _get_top_comments(post, max_comments: int = _MAX_COMMENTS) -> str:
+    """Fetch top-N comments by score from a post. Returns formatted string."""
+    try:
+        post.comments.replace_more(limit=0)
+        comments = sorted(post.comments.list(), key=lambda c: c.score, reverse=True)[:max_comments]
+        comment_texts = []
+        for c in comments:
+            body = c.body[:100] if c.body else ""
+            if body:
+                comment_texts.append(f"[+{c.score}] {body}")
+        return "\n".join(comment_texts)
+    except Exception as e:
+        logger.warning("Could not fetch comments for post %s: %s", post.id, e)
+        return ""
 
 
 def _get_reddit() -> praw.Reddit:
@@ -41,7 +59,8 @@ def search_reddit_posts(subreddit: str, limit: int = _DEFAULT_MAX_POSTS, min_upv
             if post.score >= min_upvotes:
                 posts.append({
                     "post_id": post.id,
-                    "text": f"{post.title}\n\n{post.selftext[:150] if post.selftext else ''}".strip(),
+                    "title": post.title,
+                    "selftext": post.selftext[:150] if post.selftext else "",
                     "author_handle": str(post.author) if post.author else "[deleted]",
                     "created_at": str(post.created_utc),
                     "post_url": f"https://reddit.com{post.permalink}",
@@ -51,6 +70,15 @@ def search_reddit_posts(subreddit: str, limit: int = _DEFAULT_MAX_POSTS, min_upv
                 })
             if len(posts) >= limit:
                 break
+
+        # Sort by score descending, fetch comments only for top-N posts
+        posts.sort(key=lambda p: p["score"], reverse=True)
+        for post in posts[:_MAX_POSTS_WITH_COMMENTS]:
+            comments = _get_top_comments(reddit.submission(id=post["post_id"]), _MAX_COMMENTS)
+            if comments:
+                post["text"] = f"{post['title']}\n\n{post['selftext']}\n\n-- Top comments --\n{comments}"
+            else:
+                post["text"] = f"{post['title']}\n\n{post['selftext']}"
         return posts
     except Exception as e:
         logger.error("Reddit API error for subreddit %r: %s", subreddit, e)
