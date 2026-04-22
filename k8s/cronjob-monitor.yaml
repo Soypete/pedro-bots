@@ -4,9 +4,8 @@ metadata:
   name: redditwatch-monitor
   namespace: redditwatch
 spec:
-  # 08:00, 13:00, 18:00 Mountain Time (UTC-6 MST / UTC-7 MDT)
-  # Currently set for MST (UTC-6). Update to "0 15,20,1 * * *" during MDT.
-  schedule: "0 14,19,0 * * *"
+  # 08:00 Mountain Time (UTC-6 MST / UTC-7 MDT)
+  schedule: "0 14 * * *"
   concurrencyPolicy: Forbid
   successfulJobsHistoryLimit: 3
   failedJobsHistoryLimit: 5

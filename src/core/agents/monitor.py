@@ -21,7 +21,7 @@ Respond with JSON only — no prose, no markdown:
 
 Classify as INTERESTING if relevant to: AI agents, LLMs, local inference, Kubernetes, Go, Python, cloud infra, startups/VC, physics, open-source tooling."""
 
-_CHUNK_COUNT = 4  # parallel classification workers
+_CHUNK_COUNT = int(os.environ.get("REDDIT_CLASSIFY_WORKERS", "2"))  # keep low to avoid overwhelming large models
 _CLASSIFY_MIN_SCORE = int(os.environ.get("REDDIT_CLASSIFY_MIN_SCORE", "50"))
 
 _MAX_DIGEST_CHARS = 1500

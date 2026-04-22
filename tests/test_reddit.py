@@ -131,3 +131,47 @@ def test_returned_post_has_expected_fields(mock_get_reddit):
     assert "score" in p
     assert p["score"] == 50
     assert p["topic_query"] == "LocalLLaMA"
+
+
+@patch("core.tools.reddit._get_reddit")
+def test_comments_included_in_text_when_present(mock_get_reddit):
+    """Verify that top comments are appended to the text field."""
+    from core.tools.reddit import search_reddit_posts, _get_top_comments
+
+    post = make_fake_post("c1", score=50, age_seconds=1800)
+    mock_comment1 = MagicMock()
+    mock_comment1.score = 10
+    mock_comment1.body = "This is a great comment about AI models."
+    mock_comment2 = MagicMock()
+    mock_comment2.score = 5
+    mock_comment2.body = "Another insightful comment here."
+    post.comments.replace_more = MagicMock()
+    post.comments.list = MagicMock(return_value=[mock_comment1, mock_comment2])
+
+    posts = [post]
+    mock_get_reddit.return_value = _make_reddit_mock(posts)
+
+    result = search_reddit_posts("LocalLLaMA", limit=5, min_upvotes=10)
+    assert len(result) == 1
+    text = result[0]["text"]
+    assert "This is a great comment" in text
+    assert "Another insightful comment" in text
+    assert "-- Top comments --" in text
+
+
+@patch("core.tools.reddit._get_reddit")
+def test_comments_gracefully_excluded_on_exception(mock_get_reddit):
+    """Verify that post text does not contain comments when fetching fails."""
+    from core.tools.reddit import search_reddit_posts
+
+    post = make_fake_post("e1", score=50, age_seconds=1800)
+    post.comments.replace_more = MagicMock(side_effect=Exception("API error"))
+
+    posts = [post]
+    mock_get_reddit.return_value = _make_reddit_mock(posts)
+
+    result = search_reddit_posts("LocalLLaMA", limit=5, min_upvotes=10)
+    assert len(result) == 1
+    text = result[0]["text"]
+    assert "Top comments" not in text
+    assert "Test post" in text
