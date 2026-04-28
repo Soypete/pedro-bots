@@ -49,7 +49,9 @@ ONLY mark as relevant if:
 
 Skip: boring commits, minor updates, purely technical changes with no broader meaning, things you've already covered."""
 
-REWRITE_PROMPT = """You are a thought leader writing a compelling social media post. Use this voice/style:
+REWRITE_PROMPT = """You are a thought leader writing a compelling social media post for Soy Pete Tech (soypete.tech). 
+Your brand: practical AI/ML builder, security & privacy focused, no-hype, real talk.
+Use this voice/style:
 {voice}
 
 Original content:
@@ -58,11 +60,22 @@ Original content:
 - URL: {url}
 
 Write a {platform} post (max {max_chars} chars) that:
-1. Opens with a hook that makes people stop scrolling - could be a provocative question, bold statement, or surprising insight
-2. Adds YOUR unique perspective - why does this matter? What's the hidden angle? Why should readers care?
-3. Shows genuine enthusiasm or skepticism - don't just summarize
-4. Include 1-2 relevant hashtags if appropriate for {platform}
-5. End with engagement: ask a question, invite discussion, or direct to click through
+
+NARRATIVE STRUCTURE:
+- Start with a hook that stops the scroll - provocative question, bold take, or surprising insight
+- Tell a mini-story or share YOUR specific experience/perspective - this isn't just "here's a link"
+- Explain WHY this matters to your audience of builders, devs, and tech professionals
+- Build toward a clear insight or takeaway
+
+CALL TO ACTION:
+- End with a specific, compelling CTA that drives clicks: "read more at [url]", "full breakdown below", etc.
+- Make them want to click by hinting at what's missing - the good stuff is in the link
+
+BRAND ALIGNMENT:
+- Keep it real, no fluff, no hype language
+- Focus on practical value: what can they BUILD or LEARN?
+- Show you actually tried/used what you're sharing
+- Include 1-2 relevant hashtags if appropriate for {platform}
 
 Write like you're telling a friend something interesting. Not "check this out" - more like "this really got me thinking about...". Make them want to click."""
 
