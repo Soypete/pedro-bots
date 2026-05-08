@@ -49,7 +49,7 @@ ONLY mark as relevant if:
 
 Skip: boring commits, minor updates, purely technical changes with no broader meaning, things you've already covered."""
 
-REWRITE_PROMPT = """You are a thought leader writing a compelling social media post for Soy Pete Tech (soypete.tech). 
+REWRITE_PROMPT = """You are a thought leader writing a compelling social media post for Soy Pete Tech (soypete.tech).
 Your brand: practical AI/ML builder, security & privacy focused, no-hype, real talk.
 Use this voice/style:
 {voice}
@@ -78,6 +78,115 @@ BRAND ALIGNMENT:
 - Include 1-2 relevant hashtags if appropriate for {platform}
 
 Write like you're telling a friend something interesting. Not "check this out" - more like "this really got me thinking about...". Make them want to click."""
+
+
+LINKEDIN_SYSTEM_PROMPT = """You are Miriah Peterson (Soy Pete), a Principal AI Engineer and thought leader who builds practical AI systems with security and privacy at the forefront.
+
+Your LinkedIn presence:
+- Professional but approachable - you're a practitioner, not a guru
+- You explain complex AI/ML concepts with concrete examples
+- You share lessons learned from building real systems
+- You're skeptical of hype but genuinely excited about what's actually working
+- You help people understand HOW to build things, not just WHAT to build
+
+TONE: Semi-formal, knowledgeable, practical. Think "engineering manager sharing war stories" meets "conference speaker giving a talk".
+
+STRUCTURE for each post:
+1. HOOK (first line): Start with a bold take, surprising stat, or provocative question that makes people stop scrolling
+2. CONTEXT: Briefly set the scene - what is this about, why should they care
+3. THE INSIGHT: Your main point - what did you learn, what should they know, what's the key takeaway
+4. WHY IT MATTERS: Connect to practical implications for builders/engineers
+5. CTA: End with something that drives engagement - ask a question, invite discussion
+
+CONTENT LENGTH: 3-5 paragraphs, substantial enough to provide value but not overwhelming. Aim for 800-1500 characters.
+
+FORMATTING:
+- Use short paragraphs (2-3 sentences max)
+- 1-2 relevant hashtags at end: #AI #MachineLearning #Engineering etc.
+- No emoji in the main body (save for the CTA if appropriate)
+- If sharing a link, integrate it naturally into the narrative
+
+EXAMPLE HOOKS:
+- "Most AI projects fail not because of bad models, but because of bad data pipelines."
+- "I spent 3 months building RAG. Here's what I'd do differently."
+- "The most underrated skill in AI engineering? Data validation."
+
+Write as if you're explaining this to a fellow engineer over coffee. Be specific, be real, be helpful."""
+
+
+TWITTER_SYSTEM_PROMPT = """You are Soy Pete, a practical AI/ML builder who cuts through the hype.
+
+Your Twitter style:
+- Short, punchy, no filler
+- Hot takes that are grounded in reality
+- You call out AI bs when you see it
+- Share real experiments, real failures, real learnings
+- 1-2 hashtags max, usually #AI or #ML
+
+STRUCTURE:
+1. HOOK (first tweet): Bold take or question. Stop the scroll.
+2. THREAD for depth: If it's complex, use a thread. First tweet is the thesis.
+3. CTA: End with "thread below" or a question to drive replies
+
+CHARACTER LIMIT: 280 chars per tweet. Use the full limit when you have substance.
+
+TONE: Confident but not arrogant. You're sharing what worked/didn't work. No humble-bragging.
+
+EXAMPLES:
+- "AI engineers spend 80% of their time on data. The model is the easy part."
+- "Hot take: Most RAG implementations are overcomplicated. Simple embedding search works fine for 90% of cases."
+- "Built a local LLM setup for $200. Here's what I learned:"
+
+Write like you're texting a friend who's also into engineering. Concise, direct, sometimes provocative."""
+
+
+BLUESKY_SYSTEM_PROMPT = """You are Soy Pete on Bluesky - casual, engaged, part of the tech community.
+
+Your Bluesky style:
+- More relaxed than Twitter - you're having conversations, not giving talks
+- Engage with others' posts, don't just broadcast
+- Share interesting finds, not just your own content
+- Slightly more casual than your other platforms
+- Can use some emoji, but not excessive
+
+STRUCTURE:
+- Single posts preferred (no threads unless really needed)
+- Keep it under 280 chars
+- End with engagement: a question, a "what do you think?", or a "link in replies"
+
+TONE: Friendly, curious, community-minded. You're a builder talking to other builders.
+
+EXAMPLES:
+- "This local LLM setup is wild - running a 30B model on a $500 rig 🖥️"
+- "Anyone else finding that RAG is 90% data engineering? Asking for a friend 😅"
+- "New to Bluesky - hey everyone! Building AI systems, happy to connect with other ML engineers"
+
+Write like you're hanging out in a Discord server with other engineers. Casual, fun, informative."""
+
+
+DISCORD_SYSTEM_PROMPT = """You are posting to your Discord community - your inner circle of tech folks.
+
+Your Discord style:
+- Casual, conversational, like you're chatting in a voice channel
+- Use emoji freely - this is your home crowd
+- You can be more opinionated, call things out
+- Share your real reactions - "this is wild", "I tried this and it didn't work", etc.
+- Reference previous convos when relevant
+
+STRUCTURE:
+- Keep it conversational, not formal
+- Can use bullet points for clarity
+- Always include the link
+- End with a question to get the channel talking
+
+TONE: You're welcome, you're in the loop, this is for the inner circle. Be yourself.
+
+EXAMPLES:
+- "Yo check this out - someone built a local LLM that runs on a potato 🥔"
+- "Been playing with this and honestly it's kinda fire"
+- "What do you all think about this approach? I'm on the fence"
+
+Write like you're DMing a group chat of friends who are also into this stuff."""
 
 
 def fetch_voice_from_rss(limit: int = 5) -> str:
@@ -138,8 +247,28 @@ def rewrite_for_platform(item: dict, voice: str, platform: str, max_chars: int =
         "discord": 2000,
     }
     limit = platform_limits.get(platform, 280)
-    
-    response = get_llm().invoke([
+
+    platform_max_tokens = {
+        "linkedin": 16000,
+        "twitter": 1024,
+        "bluesky": 1024,
+        "discord": 2048,
+        "substack": 2048,
+    }
+    max_tokens = platform_max_tokens.get(platform, 2048)
+
+    platform_system_prompts = {
+        "linkedin": LINKEDIN_SYSTEM_PROMPT,
+        "twitter": TWITTER_SYSTEM_PROMPT,
+        "bluesky": BLUESKY_SYSTEM_PROMPT,
+        "discord": DISCORD_SYSTEM_PROMPT,
+        "substack": REWRITE_PROMPT,
+    }
+
+    system_prompt = platform_system_prompts.get(platform, REWRITE_PROMPT)
+
+    response = get_llm(max_tokens=max_tokens).invoke([
+        SystemMessage(content=system_prompt),
         SystemMessage(content=REWRITE_PROMPT.format(
             voice=voice,
             title=item.get("title", ""),
@@ -149,7 +278,7 @@ def rewrite_for_platform(item: dict, voice: str, platform: str, max_chars: int =
             max_chars=limit,
         )),
     ])
-    
+
     return response.content.strip()
 
 
@@ -208,15 +337,55 @@ def fetch_rss_feeds(feeds: list[dict]) -> list[dict]:
 def post_to_discord(item: dict, text: str, dry_run: bool = False) -> dict:
     """Post content to Discord #social-posts channel."""
     discord_text = f"{text}\n\n{item.get('url', '')}"
-    
+
     if dry_run:
         print(f"\n--- DRY RUN: would post to Discord ---")
         print(f"Text: {discord_text[:500]}...")
         print("--- END DRY RUN ---")
-        return {"posted": True}
-    
+        return {"posted": True, "dry_run": True}
+
     result = send_discord_message(discord_text, channel="social-posts")
     return {"posted": result, "platform": "discord"}
+
+
+def post_to_linkedin_agent(item: dict, text: str, dry_run: bool = False) -> dict:
+    """Post content to LinkedIn with URL as a comment (better reach)."""
+    url = item.get("url", "")
+    title = item.get("title", "")
+
+    if dry_run:
+        print(f"\n--- DRY RUN: would post to LinkedIn ---")
+        print(f"Text: {text[:500]}...")
+        print(f"URL as comment: {url}")
+        print("--- END DRY RUN ---")
+        return {"posted": True, "dry_run": True}
+
+    result = linkedin.post_to_linkedin(text, url=url, title=title, comment_with_url=True)
+    if result:
+        logger.info("Posted to LinkedIn: %s", result.get("post_url"))
+        return {"posted": True, "platform": "linkedin", "post_url": result.get("post_url")}
+    else:
+        logger.error("Failed to post to LinkedIn")
+        return {"posted": False, "platform": "linkedin"}
+
+
+def post_to_bluesky_agent(item: dict, text: str, dry_run: bool = False) -> dict:
+    """Post content to Bluesky."""
+    url = item.get("url", "")
+
+    if dry_run:
+        print(f"\n--- DRY RUN: would post to Bluesky ---")
+        print(f"Text: {text[:500]}...")
+        print("--- END DRY RUN ---")
+        return {"posted": True, "dry_run": True}
+
+    result = bluesky.post_to_bluesky(text, url=url if url else None)
+    if result:
+        logger.info("Posted to Bluesky: %s", result.get("post_url"))
+        return {"posted": True, "platform": "bluesky", "post_url": result.get("post_url")}
+    else:
+        logger.error("Failed to post to Bluesky")
+        return {"posted": False, "platform": "bluesky"}
 
 
 def run_social_poster(dry_run: bool = False) -> None:
@@ -320,44 +489,58 @@ def run_social_poster(dry_run: bool = False) -> None:
                     logger.info("Filled: %s", item.get("title", "")[:40])
     
     logger.info("Selected top %d items for posting (diverse by feed type): %s", len(top_items), [i.get("title", "")[:30] for i in top_items])
-    
+
     platforms = ["discord", "linkedin", "bluesky", "substack"]
-    
+
     for item in top_items:
         suggested = item.get("relevance", {}).get("suggested_text")
-        
-        # Generate drafts for all platforms, post all to Discord for review
-        all_drafts = []
-        
+
+        platform_texts = {}
         for platform in platforms:
             text = suggested or rewrite_for_platform(item, voice, platform)
-            url = item.get("url", "")
-            
+            platform_texts[platform] = text
+            logger.info("Generated draft for %s: %s", platform, item.get("title", "")[:50])
+
+        if dry_run:
+            all_drafts = []
             platform_labels = {
                 "discord": "📱 Discord",
-                "linkedin": "💼 LinkedIn", 
+                "linkedin": "💼 LinkedIn",
                 "bluesky": "🐦 Bluesky",
                 "substack": "✍️ Substack Notes"
             }
-            
-            draft = f"{platform_labels.get(platform, platform)}\n{text}\n🔗 {url}"
-            all_drafts.append(draft)
-            
-            logger.info("Generated draft for %s: %s", platform, item.get("title", "")[:50])
-        
-        if not dry_run:
-            # Post all drafts to Discord as a review message
-            for i, draft in enumerate(all_drafts):
-                result = post_to_discord(item, draft, dry_run=False)
-                if i == 0:
-                    if result.get("posted"):
-                        logger.info("Posted draft to Discord: %s", item.get("url"))
-        
-        if not dry_run:
+            for platform, text in platform_texts.items():
+                url = item.get("url", "")
+                draft = f"{platform_labels.get(platform, platform)}\n{text}\n🔗 {url}"
+                all_drafts.append(draft)
+
+            print(f"\n=== DRY RUN: Would post ===")
+            for draft in all_drafts:
+                print(draft)
+                print("---")
+            print("==========================\n")
+        else:
+            posted_any = False
+
+            for platform, text in platform_texts.items():
+                if platform == "discord":
+                    discord_text = f"📱 Posted to {platform}:\n{text}\n\n{item.get('url', '')}"
+                    result = post_to_discord(item, discord_text, dry_run=False)
+                elif platform == "linkedin":
+                    result = post_to_linkedin_agent(item, text, dry_run=False)
+                elif platform == "bluesky":
+                    result = post_to_bluesky_agent(item, text, dry_run=False)
+                else:
+                    result = {"posted": False}
+
+                if result.get("posted"):
+                    posted_any = True
+                    logger.info("Posted to %s: %s", platform, item.get("title", "")[:40])
+
             social_tools.mark_item_posted(str(item["id"]))
-    
+
     if not dry_run and top_items:
-        send_discord_message(f"Social poster complete: generated drafts for {len(top_items)} items across {len(platforms)} platforms")
-    
+        send_discord_message(f"Social poster complete: posted {len(top_items)} items to Discord, LinkedIn, Bluesky")
+
     log_audit_summary(auditor)
     logger.info("SocialPoster run complete")
