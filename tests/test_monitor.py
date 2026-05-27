@@ -72,6 +72,39 @@ def test_classify_unparseable_returns_not_interesting(mock_get_llm):
     assert result["reason"] == "parse error"
 
 
+@patch("core.agents.monitor.get_llm")
+def test_classify_retry_on_parse_failure(mock_get_llm):
+    """LLM should be retried with nudge on parse failure, succeed on 3rd attempt."""
+    from core.agents.monitor import _classify_post
+
+    llm = MagicMock()
+    call_count = 0
+
+    def invoke_side_effect(messages):
+        nonlocal call_count
+        call_count += 1
+        if call_count == 1:
+            return MagicMock(content="Not valid JSON")
+        elif call_count == 2:
+            return MagicMock(content="Also not JSON")
+        else:
+            return MagicMock(content=json.dumps({
+                "classification": "INTERESTING",
+                "confidence": 0.8,
+                "reason": "Relevant after retry",
+                "summary": "Success on 3rd try",
+            }))
+
+    llm.invoke.side_effect = invoke_side_effect
+    mock_get_llm.return_value = llm
+
+    result = _classify_post(make_post(), max_retries=3)
+
+    assert result["classification"] == "INTERESTING"
+    assert result["confidence"] == 0.8
+    assert call_count == 3
+
+
 # --- _classify_chunk tests ---
 
 @patch("core.agents.monitor.store_classification")
