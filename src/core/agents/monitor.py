@@ -1,6 +1,7 @@
 import json
 import logging
 import os
+import re
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime, timezone
@@ -28,23 +29,75 @@ _MAX_DIGEST_CHARS = 1500
 _MAX_DIGEST_POSTS = 10
 
 
-def _classify_post(post: dict) -> dict:
-    """Call LLM to classify a single post. Returns classification dict."""
+def _parse_classification(response_content: str) -> dict | None:
+    """Parse classification JSON from LLM response. Returns dict or None if parse fails."""
+    try:
+        return json.loads(response_content)
+    except json.JSONDecodeError:
+        pass
+
+    m = re.search(r'\{.*\}', response_content, re.DOTALL)
+    if m:
+        try:
+            return json.loads(m.group())
+        except json.JSONDecodeError:
+            pass
+
+    return None
+
+
+def _classify_post(post: dict, max_retries: int = 3) -> dict:
+    """Call LLM to classify a single post. Returns classification dict.
+
+    Uses robust JSON extraction with automatic retry and nudge injection
+    on parse failures.
+    """
     llm = get_llm()
     text = post.get("text", "")[:300]
-    response = llm.invoke([
+    messages = [
         SystemMessage(content=CLASSIFY_SYSTEM_PROMPT),
         HumanMessage(content=f"Post from r/{post.get('topic_query', '?')}:\n{text}"),
-    ])
-    try:
-        return json.loads(response.content)
-    except json.JSONDecodeError:
-        import re
-        m = re.search(r'\{.*\}', response.content, re.DOTALL)
-        if m:
-            return json.loads(m.group())
-        logger.warning("Could not parse classification JSON: %s", response.content[:100])
-        return {"classification": "NOT_INTERESTING", "confidence": 0.0, "reason": "parse error", "summary": None}
+    ]
+
+    nudge_template = """Your previous response was not valid JSON. Please respond with ONLY JSON, no prose or markdown.
+Required format: {"classification":"INTERESTING"|"NOT_INTERESTING","confidence":0.0-1.0,"reason":"one sentence","summary":"one sentence or null"}"""
+
+    for attempt in range(1, max_retries + 1):
+        response = llm.invoke(messages)
+
+        result = _parse_classification(response.content)
+        if result is not None:
+            required_keys = {"classification", "confidence", "reason", "summary"}
+            if required_keys.issubset(result.keys()):
+                return result
+            if "classification" in result:
+                return {
+                    "classification": result.get("classification", "NOT_INTERESTING"),
+                    "confidence": result.get("confidence", 0.0),
+                    "reason": result.get("reason", ""),
+                    "summary": result.get("summary"),
+                }
+
+        if attempt < max_retries:
+            logger.warning(
+                "Classification parse failed (attempt %d/%d), injecting nudge for post %s",
+                attempt,
+                max_retries,
+                post.get("post_id", "?")[:8],
+            )
+            messages.append(HumanMessage(content=nudge_template))
+
+    logger.warning(
+        "Classification failed after %d attempts for post %s",
+        max_retries,
+        post.get("post_id", "?")[:8],
+    )
+    return {
+        "classification": "NOT_INTERESTING",
+        "confidence": 0.0,
+        "reason": "parse error",
+        "summary": None,
+    }
 
 
 def _classify_chunk(chunk: list[dict], dry_run: bool = False) -> list[tuple[dict, dict]]:

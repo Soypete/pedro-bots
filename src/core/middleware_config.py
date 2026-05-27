@@ -1,6 +1,4 @@
 import logging
-import os
-from typing import Any
 
 from langchain_core.tools import StructuredTool
 from pedro_agentware.middleware import InMemoryAuditor, MiddlewareImpl
@@ -9,15 +7,24 @@ from pedro_agentware.middleware.policy import Policy, SimplePolicyEvaluator
 
 logger = logging.getLogger(__name__)
 
-_POLICY_PATH = os.path.join(os.path.dirname(__file__), "..", "policy.yaml")
+
+def _load_policy() -> SimplePolicyEvaluator:
+    """Load default policy - allows all tools for now."""
+    policy = Policy(
+        name="default",
+        rules=[],
+        default_action="allow",
+    )
+    return SimplePolicyEvaluator(policy)
 
 
 def build_middleware() -> tuple[MiddlewareImpl, InMemoryAuditor]:
     """Load policy.yaml and return a configured Middleware + auditor."""
     auditor = InMemoryAuditor()
-    policy = Policy(rules=[], default_deny=False)
-    evaluator = SimplePolicyEvaluator(policy)
-    mw = MiddlewareImpl(executor=None, evaluator=evaluator, auditor=auditor)
+    policy = _load_policy()
+
+    dummy_executor = lambda name, args: (None, True, "")
+    mw = MiddlewareImpl(executor=dummy_executor, evaluator=policy, auditor=auditor)
     return mw, auditor
 
 
@@ -38,21 +45,19 @@ def _wrap_one(tool, middleware: MiddlewareImpl):
     tool_description = tool.description
     tool_schema = getattr(tool, "args_schema", None)
 
-    def make_executor(t):
-        def executor(name: str, args: dict) -> tuple[Any, bool, str]:
-            try:
-                result = t.invoke(args)
-                return (result, True, "")
-            except Exception as e:
-                return (None, False, str(e))
-        return executor
+    from pedro_agentware.middleware.types import CallerContext
 
-    executor = make_executor(tool)
+    default_caller = CallerContext(
+        user_id="",
+        session_id="default",
+        role="user",
+        source="cli",
+        trusted=True,
+        metadata={},
+    )
 
     def wrapped_fn(**kwargs):
-        from pedro_agentware.middleware.types import CallerContext
-        caller = CallerContext(session_id="social-poster", user_id="system")
-        result, success, error = middleware.execute(tool_name, kwargs, caller)
+        result, success, error = middleware.execute(tool_name, kwargs, default_caller)
         if not success:
             logger.warning("Middleware blocked %s: %s", tool_name, error)
             return f"Policy denied: {error}"
