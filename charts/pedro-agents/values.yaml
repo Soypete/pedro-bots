@@ -95,7 +95,7 @@ discord:
 
 config:
   llamaCppBaseUrl: "http://100.121.229.114:8080/v1"
-  llamaCppModel: "qwen3.6-27b"
+  llamaCppModel: "qwen3.6-27b-mtp"
   logLevel: "INFO"
   maxPostsPerQuery: 20
 
