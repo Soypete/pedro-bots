@@ -6,7 +6,7 @@ metadata:
 data:
   # Swap model by editing this value — no redeploy of code required
   LLAMA_CPP_BASE_URL: "http://llamacpp-svc.homelab.svc.cluster.local:8080/v1"
-  LLAMA_CPP_MODEL: "qwen3.6-27b"
+  LLAMA_CPP_MODEL: "qwen3.6-27b-mtp"
   MAX_POSTS_PER_SUBREDDIT: "20"
   LOG_LEVEL: "INFO"
   # Fetch window and filtering
