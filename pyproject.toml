@@ -52,4 +52,4 @@ docker-monitor = { cmd = "python -m main agent --agent monitor", env = { PYTHONP
 docker-suggest = { cmd = "python -m main agent --agent suggest", env = { PYTHONPATH = "src" } }
 docker-social  = { cmd = "python -m main agent --agent social-poster", env = { PYTHONPATH = "src" } }
 # Rebuild the local middleware-py wheel after changes to middleware-py source
-build-wheel = { cmd = "uv build --wheel /Users/miriahpeterson/Code/go-projects/pedro-agentware/middleware_py --out-dir ./local-packages/" }
+build-wheel = { cmd = "uv build --wheel /Users/soypete/code/pedro/pedro-agentware/python --out-dir ./local-packages/" }
