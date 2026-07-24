@@ -1,6 +1,21 @@
 import os
+import logging
 
 from langchain_openai import ChatOpenAI
+
+logger = logging.getLogger(__name__)
+
+VAULT_SECRETS_PATH = os.environ.get("VAULT_SECRETS_PATH", "/vault/secrets")
+
+
+def get_secret(name: str) -> str | None:
+    """Read secret from Vault secrets volume (file-based) or env var fallback."""
+    for key in [name.lower(), name.upper(), name]:
+        file_path = f"{VAULT_SECRETS_PATH}/{key}"
+        if os.path.exists(file_path):
+            with open(file_path) as f:
+                return f.read().strip()
+    return os.environ.get(name)
 
 
 def get_llm(model: str | None = None, max_tokens: int = 2048) -> ChatOpenAI:

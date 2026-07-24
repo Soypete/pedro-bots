@@ -6,11 +6,16 @@ from typing import Any
 import psycopg2
 import psycopg2.extras
 
+from core.config import get_secret
+
 logger = logging.getLogger(__name__)
 
 
 def _get_conn():
-    conn = psycopg2.connect(os.environ["POSTGRES_URL"])
+    postgres_url = get_secret("postgres_url")
+    if not postgres_url:
+        raise ValueError("POSTGRES_URL not found in Vault secrets or environment")
+    conn = psycopg2.connect(postgres_url)
     conn.autocommit = True
     with conn.cursor() as cur:
         cur.execute("SET search_path = redditwatch")
@@ -22,9 +27,13 @@ def load_active_topics() -> list[str]:
     conn = _get_conn()
     try:
         with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
-            cur.execute("SELECT query FROM rw_topics WHERE active = true ORDER BY priority DESC")
+            cur.execute(
+                "SELECT query FROM rw_topics WHERE active = true ORDER BY priority DESC"
+            )
             topics = [row["query"] for row in cur.fetchall()]
-            logger.info("load_active_topics: returned %d topics: %s", len(topics), topics)
+            logger.info(
+                "load_active_topics: returned %d topics: %s", len(topics), topics
+            )
             return topics
     finally:
         conn.close()
@@ -43,7 +52,11 @@ def get_seen_post_ids() -> set[str]:
 
 def store_classification(post: dict, classification: dict) -> bool:
     """Save a classified Reddit post. post: dict from search_reddit_posts. classification: {classification, confidence, reason, summary}."""
-    logger.info("store_classification called: post_id=%s classification=%s", post.get("post_id"), classification.get("classification"))
+    logger.info(
+        "store_classification called: post_id=%s classification=%s",
+        post.get("post_id"),
+        classification.get("classification"),
+    )
     conn = _get_conn()
     try:
         with conn.cursor() as cur:
@@ -70,7 +83,9 @@ def store_classification(post: dict, classification: dict) -> bool:
             )
         return True
     except Exception as e:
-        logger.error("Failed to store classification for post %s: %s", post.get("post_id"), e)
+        logger.error(
+            "Failed to store classification for post %s: %s", post.get("post_id"), e
+        )
         return False
     finally:
         conn.close()

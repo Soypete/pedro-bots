@@ -13,14 +13,47 @@ spec:
     spec:
       activeDeadlineSeconds: 3600  # kill job after 1h so hung runs never block the next schedule
       template:
+        metadata:
+          annotations:
+            vault.hashicorp.com/agent-inject: "true"
+            vault.hashicorp.com/agent-inject-init: "true"
+            vault.hashicorp.com/agent-inject-sidecar: "true"
+            vault.hashicorp.com/role: "pedro"
+            vault.hashicorp.com/agent-inject-secret-redditwatch: "secret/pedro/redditwatch"
+            vault.hashicorp.com/agent-inject-template-redditwatch: |
+              {{- with secret "secret/pedro/redditwatch" }}
+              export REDDIT_CLIENT_ID="{{ .Data.data.REDDIT_CLIENT_ID }}"
+              export REDDIT_CLIENT_SECRET="{{ .Data.data.REDDIT_CLIENT_SECRET }}"
+              export REDDIT_USER_AGENT="{{ .Data.data.REDDIT_USER_AGENT }}"
+              export DISCORD_BOT_TOKEN="{{ .Data.data.DISCORD_BOT_TOKEN }}"
+              export DISCORD_CHANNEL_ID="{{ .Data.data.DISCORD_CHANNEL_ID }}"
+              export DISCORD_NOTIFY_USER_ID="{{ .Data.data.DISCORD_NOTIFY_USER_ID }}"
+              export SUPABASE_URL="{{ .Data.data.SUPABASE_URL }}"
+              export SUPABASE_SERVICE_KEY="{{ .Data.data.SUPABASE_SERVICE_KEY }}"
+              export POSTGRES_URL="{{ .Data.data.POSTGRES_URL }}"
+              {{- end }}
+            vault.hashicorp.com/agent-inject-template-REDDIT_CLIENT_ID: '{{- with secret "secret/pedro/redditwatch"}}{{.Data.data.REDDIT_CLIENT_ID}}{{- end}}'
+            vault.hashicorp.com/agent-inject-env-REDDIT_CLIENT_ID: "true"
+            vault.hashicorp.com/agent-inject-template-REDDIT_CLIENT_SECRET: '{{- with secret "secret/pedro/redditwatch"}}{{.Data.data.REDDIT_CLIENT_SECRET}}{{- end}}'
+            vault.hashicorp.com/agent-inject-env-REDDIT_CLIENT_SECRET: "true"
+            vault.hashicorp.com/agent-inject-template-REDDIT_USER_AGENT: '{{- with secret "secret/pedro/redditwatch"}}{{.Data.data.REDDIT_USER_AGENT}}{{- end}}'
+            vault.hashicorp.com/agent-inject-env-REDDIT_USER_AGENT: "true"
+            vault.hashicorp.com/agent-inject-template-DISCORD_BOT_TOKEN: '{{- with secret "secret/pedro/redditwatch"}}{{.Data.data.DISCORD_BOT_TOKEN}}{{- end}}'
+            vault.hashicorp.com/agent-inject-env-DISCORD_BOT_TOKEN: "true"
+            vault.hashicorp.com/agent-inject-template-DISCORD_CHANNEL_ID: '{{- with secret "secret/pedro/redditwatch"}}{{.Data.data.DISCORD_CHANNEL_ID}}{{- end}}'
+            vault.hashicorp.com/agent-inject-env-DISCORD_CHANNEL_ID: "true"
+            vault.hashicorp.com/agent-inject-template-SUPABASE_URL: '{{- with secret "secret/pedro/redditwatch"}}{{.Data.data.SUPABASE_URL}}{{- end}}'
+            vault.hashicorp.com/agent-inject-env-SUPABASE_URL: "true"
+            vault.hashicorp.com/agent-inject-template-SUPABASE_SERVICE_KEY: '{{- with secret "secret/pedro/redditwatch"}}{{.Data.data.SUPABASE_SERVICE_KEY}}{{- end}}'
+            vault.hashicorp.com/agent-inject-env-SUPABASE_SERVICE_KEY: "true"
+            vault.hashicorp.com/agent-inject-template-POSTGRES_URL: '{{- with secret "secret/pedro/redditwatch"}}{{.Data.data.POSTGRES_URL}}{{- end}}'
+            vault.hashicorp.com/agent-inject-env-POSTGRES_URL: "true"
         spec:
           restartPolicy: OnFailure
           containers:
             - name: redditwatch
-              image: zot.local/redditwatch:latest
-              command: ["--agent", "monitor"]
+              image: 100.81.89.62:5000/redditwatch:latest
+              args: ["agent", "--agent", "monitor"]
               envFrom:
-                - secretRef:
-                    name: redditwatch-secrets
                 - configMapRef:
                     name: redditwatch-config
