@@ -10,6 +10,7 @@ from core.agents.monitor import run_monitor
 from core.agents.suggestion import run_suggestion
 from core.agents.social_poster import run_social_poster
 from core.tools.social_tools import add_content_url, add_feed, list_pending
+from core.tools.supabase_tools import _get_conn
 
 logging.basicConfig(
     level=os.environ.get("LOG_LEVEL", "INFO"),
@@ -40,14 +41,24 @@ def cli() -> None:
     parser_url.add_argument("--title", help="Optional title for the URL")
 
     parser_feed = subparsers.add_parser("add-feed", help="Add an RSS feed to track")
-    parser_feed.add_argument("--feed-url", help="RSS feed URL (not needed for YouTube channel)")
     parser_feed.add_argument(
-        "--feed-type", choices=["youtube", "substack", "generic"], default="generic", help="Feed type"
+        "--feed-url", help="RSS feed URL (not needed for YouTube channel)"
     )
-    parser_feed.add_argument("--channel-id", help="YouTube channel ID (for youtube feed type)")
+    parser_feed.add_argument(
+        "--feed-type",
+        choices=["youtube", "substack", "generic"],
+        default="generic",
+        help="Feed type",
+    )
+    parser_feed.add_argument(
+        "--channel-id", help="YouTube channel ID (for youtube feed type)"
+    )
     parser_feed.add_argument("--name", help="Feed name")
 
     subparsers.add_parser("list-pending", help="List pending content items")
+
+    parser_db = subparsers.add_parser("db", help="Run SQL against database")
+    parser_db.add_argument("--sql", required=True, help="SQL to execute")
 
     args = parser.parse_args()
 
@@ -68,6 +79,18 @@ def cli() -> None:
         add_feed(args.feed_url, args.feed_type, args.name, args.channel_id)
     elif args.command == "list-pending":
         list_pending()
+    elif args.command == "db":
+        conn = _get_conn()
+        try:
+            with conn.cursor() as cur:
+                cur.execute(args.sql)
+                if cur.description:
+                    for row in cur.fetchall():
+                        print(row)
+                else:
+                    print(f"Rows affected: {cur.rowcount}")
+        finally:
+            conn.close()
 
 
 if __name__ == "__main__":

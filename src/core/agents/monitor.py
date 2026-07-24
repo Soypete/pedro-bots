@@ -1,6 +1,7 @@
 import json
 import logging
 import os
+import random
 import re
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -11,18 +12,34 @@ from langchain_core.messages import HumanMessage, SystemMessage
 from core.config import get_llm
 from core.middleware_config import build_middleware, log_audit_summary
 from core.tools.reddit import search_reddit_posts, WINDOW_HOURS
-from core.tools.supabase_tools import load_active_topics, store_classification, get_seen_post_ids
+from core.tools.supabase_tools import (
+    load_active_topics,
+    store_classification,
+    get_seen_post_ids,
+)
 from core.tools.discord import send_discord_message, is_high_signal
 
 logger = logging.getLogger(__name__)
 
-CLASSIFY_SYSTEM_PROMPT = """You are a tech curator. Classify the Reddit post below.
+CLASSIFY_SYSTEM_PROMPT = """You are a tech curator for a data governance startup and homelab/AI podcast. Classify the Reddit post below.
 Respond with JSON only — no prose, no markdown:
 {"classification":"INTERESTING"|"NOT_INTERESTING","confidence":0.0-1.0,"reason":"one sentence","summary":"one sentence or null"}
 
-Classify as INTERESTING if relevant to: AI agents, LLMs, local inference, Kubernetes, Go, Python, cloud infra, startups/VC, physics, open-source tooling."""
+Classify as INTERESTING if relevant to ANY of:
+- AI agents, LLMs, local inference, RAG, context engineering
+- AI security, guardrails, responsible AI
+- GPU/hardware for AI (NVIDIA, local compute)
+- Data governance, data quality, ETL, data pipelines
+- Startup news, VC funding, co-founder search, YC
+- Kubernetes, infrastructure, homelab, self-hosted
+- Agent frameworks, LangChain, knowledge graphs, ontologies
+- Open-source tooling for developers
 
-_CHUNK_COUNT = int(os.environ.get("REDDIT_CLASSIFY_WORKERS", "2"))  # keep low to avoid overwhelming large models
+Also include: potential co-founder posts, interesting tech discussions, emerging tools."""
+
+_CHUNK_COUNT = int(
+    os.environ.get("REDDIT_CLASSIFY_WORKERS", "2")
+)  # keep low to avoid overwhelming large models
 _CLASSIFY_MIN_SCORE = int(os.environ.get("REDDIT_CLASSIFY_MIN_SCORE", "50"))
 
 _MAX_DIGEST_CHARS = 1500
@@ -36,7 +53,7 @@ def _parse_classification(response_content: str) -> dict | None:
     except json.JSONDecodeError:
         pass
 
-    m = re.search(r'\{.*\}', response_content, re.DOTALL)
+    m = re.search(r"\{.*\}", response_content, re.DOTALL)
     if m:
         try:
             return json.loads(m.group())
@@ -65,7 +82,7 @@ Required format: {"classification":"INTERESTING"|"NOT_INTERESTING","confidence":
     for attempt in range(1, max_retries + 1):
         response = llm.invoke(messages)
 
-        result = _parse_classification(response.content)
+        result = _parse_classification(str(response.content))
         if result is not None:
             required_keys = {"classification", "confidence", "reason", "summary"}
             if required_keys.issubset(result.keys()):
@@ -100,7 +117,9 @@ Required format: {"classification":"INTERESTING"|"NOT_INTERESTING","confidence":
     }
 
 
-def _classify_chunk(chunk: list[dict], dry_run: bool = False) -> list[tuple[dict, dict]]:
+def _classify_chunk(
+    chunk: list[dict], dry_run: bool = False
+) -> list[tuple[dict, dict]]:
     """Classify all posts in a time bucket. Returns (post, classification) pairs."""
     results = []
     for post in chunk:
@@ -124,10 +143,14 @@ def _split_into_time_chunks(posts: list[dict], n: int) -> list[list[dict]]:
 
 
 def _format_digest(interesting: list[tuple], total_fetched: int) -> str:
-    top = sorted(interesting, key=lambda x: x[1].get("confidence", 0), reverse=True)[:_MAX_DIGEST_POSTS]
+    top = sorted(interesting, key=lambda x: x[1].get("confidence", 0), reverse=True)[
+        :_MAX_DIGEST_POSTS
+    ]
     lines = ["check out this:\n"]
     for i, (post, clf) in enumerate(top, 1):
-        lines.append(f"{i}. [r/{post.get('topic_query')}] u/{post.get('author_handle')}")
+        lines.append(
+            f"{i}. [r/{post.get('topic_query')}] u/{post.get('author_handle')}"
+        )
         if clf.get("summary"):
             lines.append(f"   {clf['summary'][:120]}")
         lines.append(f"   {post.get('post_url')}\n")
@@ -135,15 +158,31 @@ def _format_digest(interesting: list[tuple], total_fetched: int) -> str:
     return "\n".join(lines)[:_MAX_DIGEST_CHARS]
 
 
+_SAMPLE_TOPICS = 10  # random subreddits per run
+
+
 def run_monitor(dry_run: bool = False) -> None:
-    logger.info("RedditWatch monitor run starting at %s (dry_run=%s)", datetime.now(timezone.utc).isoformat(), dry_run)
+    logger.info(
+        "RedditWatch monitor run starting at %s (dry_run=%s)",
+        datetime.now(timezone.utc).isoformat(),
+        dry_run,
+    )
     _, auditor = build_middleware()
 
-    # 1. Load topics and seen IDs
-    topics = load_active_topics()
-    if not topics:
+    # 1. Load topics and sample random subset
+    all_topics = load_active_topics()
+    if not all_topics:
         logger.warning("No active topics found — aborting")
         return
+
+    if len(all_topics) > _SAMPLE_TOPICS:
+        topics = random.sample(all_topics, _SAMPLE_TOPICS)
+        logger.info(
+            "Sampled %d of %d topics: %s", _SAMPLE_TOPICS, len(all_topics), topics
+        )
+    else:
+        topics = all_topics
+
     seen_ids = get_seen_post_ids()
     logger.info("Loaded %d topics, %d seen post IDs", len(topics), len(seen_ids))
 
@@ -163,7 +202,12 @@ def run_monitor(dry_run: bool = False) -> None:
     # 2b. Pre-classify score filter — reduces LLM calls for large post sets
     before = len(all_posts)
     all_posts = [p for p in all_posts if p["score"] >= _CLASSIFY_MIN_SCORE]
-    logger.info("Score filter (>=%d): %d → %d posts to classify", _CLASSIFY_MIN_SCORE, before, len(all_posts))
+    logger.info(
+        "Score filter (>=%d): %d → %d posts to classify",
+        _CLASSIFY_MIN_SCORE,
+        before,
+        len(all_posts),
+    )
 
     if not all_posts:
         logger.info("No posts passed score filter")
@@ -172,11 +216,18 @@ def run_monitor(dry_run: bool = False) -> None:
 
     # 3. Split into time buckets and classify in parallel
     chunks = [c for c in _split_into_time_chunks(all_posts, _CHUNK_COUNT) if c]
-    logger.info("Classifying %d posts across %d time chunks in parallel", len(all_posts), len(chunks))
+    logger.info(
+        "Classifying %d posts across %d time chunks in parallel",
+        len(all_posts),
+        len(chunks),
+    )
 
     interesting: list[tuple] = []
     with ThreadPoolExecutor(max_workers=len(chunks)) as executor:
-        futures = {executor.submit(_classify_chunk, chunk, dry_run): i for i, chunk in enumerate(chunks)}
+        futures = {
+            executor.submit(_classify_chunk, chunk, dry_run): i
+            for i, chunk in enumerate(chunks)
+        }
         for future in as_completed(futures):
             chunk_idx = futures[future]
             try:
@@ -185,18 +236,24 @@ def run_monitor(dry_run: bool = False) -> None:
                         interesting.append((post, clf))
                         logger.info(
                             "INTERESTING [%.2f] chunk=%d r/%s: %s",
-                            clf.get("confidence", 0), chunk_idx,
-                            post.get("topic_query"), clf.get("reason", "")[:80],
+                            clf.get("confidence", 0),
+                            chunk_idx,
+                            post.get("topic_query"),
+                            clf.get("reason", "")[:80],
                         )
             except Exception as e:
                 logger.error("Chunk %d classification failed: %s", chunk_idx, e)
 
-    logger.info("Classification complete: %d/%d interesting", len(interesting), len(all_posts))
+    logger.info(
+        "Classification complete: %d/%d interesting", len(interesting), len(all_posts)
+    )
 
     # 4. Send Discord digest if anything interesting
     if interesting:
         msg = _format_digest(interesting, len(all_posts))
-        top_confidence = max((clf.get("confidence", 0) for _, clf in interesting), default=0)
+        top_confidence = max(
+            (clf.get("confidence", 0) for _, clf in interesting), default=0
+        )
         if dry_run:
             print("\n--- DRY RUN: would send this Discord message ---")
             print(msg)

@@ -5,12 +5,21 @@ import threading
 
 import discord
 
+from core.config import get_secret
+
 logger = logging.getLogger(__name__)
 
-DISCORD_BOT_TOKEN = os.environ.get("DISCORD_BOT_TOKEN", "")
 DISCORD_CHANNEL_NAME = os.environ.get("DISCORD_CHANNEL_NAME", "interesting-content")
-DISCORD_NOTIFY_USER_ID = os.environ.get("DISCORD_NOTIFY_USER_ID", "")
 DISCORD_PING_THRESHOLD = float(os.environ.get("DISCORD_PING_THRESHOLD", "0.8"))
+
+
+def _get_bot_token() -> str:
+    return get_secret("discord_bot_token") or ""
+
+
+def _get_notify_user_id() -> str:
+    return get_secret("discord_notify_user_id") or ""
+
 
 _client = None
 _channel = None
@@ -49,7 +58,7 @@ def _discord_worker():
     async def on_connect():
         logger.info("Discord bot connected")
 
-    _loop.run_until_complete(_client.login(DISCORD_BOT_TOKEN))
+    _loop.run_until_complete(_client.login(_get_bot_token()))
     _loop.run_until_complete(_client.connect())
 
 
@@ -60,7 +69,7 @@ def _ensure_connected(channel: str = None):
     if _channel is not None:
         return _channel
 
-    if not DISCORD_BOT_TOKEN:
+    if not _get_bot_token():
         logger.warning("DISCORD_BOT_TOKEN not set — skipping Discord notification")
         return None
 
@@ -72,7 +81,7 @@ def _ensure_connected(channel: str = None):
             return None
 
     channel_name = channel or DISCORD_CHANNEL_NAME
-    
+
     for guild in _client.guilds:
         for ch in guild.text_channels:
             if ch.name == channel_name:
@@ -84,9 +93,11 @@ def _ensure_connected(channel: str = None):
     return None
 
 
-def send_discord_message(body: str, high_signal: bool = False, channel: str = None) -> bool:
+def send_discord_message(
+    body: str, high_signal: bool = False, channel: str = None
+) -> bool:
     """Send a message to Discord via bot session.
-    
+
     Args:
         body: The message content to send
         high_signal: If True, ping @here for high-signal posts (confidence >= threshold)
@@ -110,8 +121,8 @@ def send_discord_message(body: str, high_signal: bool = False, channel: str = No
         mentions = []
         if high_signal:
             mentions.append("@here")
-        if DISCORD_NOTIFY_USER_ID:
-            mentions.append(f"<@{DISCORD_NOTIFY_USER_ID}>")
+        if _get_notify_user_id():
+            mentions.append(f"<@{_get_notify_user_id()}>")
 
         message = " ".join(mentions) + " " + body if mentions else body
 

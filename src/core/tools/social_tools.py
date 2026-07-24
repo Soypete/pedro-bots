@@ -6,11 +6,16 @@ from typing import Any, Optional
 import psycopg2
 import psycopg2.extras
 
+from core.config import get_secret
+
 logger = logging.getLogger(__name__)
 
 
 def _get_conn():
-    conn = psycopg2.connect(os.environ["POSTGRES_URL"])
+    postgres_url = get_secret("postgres_url")
+    if not postgres_url:
+        raise ValueError("POSTGRES_URL not found in Vault secrets or environment")
+    conn = psycopg2.connect(postgres_url)
     conn.autocommit = True
     with conn.cursor() as cur:
         cur.execute("SET search_path = socialwatch")
@@ -22,13 +27,20 @@ def load_active_feeds() -> list[dict[str, Any]]:
     conn = _get_conn()
     try:
         with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
-            cur.execute("SELECT * FROM feeds WHERE active = true ORDER BY created_at DESC")
+            cur.execute(
+                "SELECT * FROM feeds WHERE active = true ORDER BY created_at DESC"
+            )
             return [dict(row) for row in cur.fetchall()]
     finally:
         conn.close()
 
 
-def add_feed(url: str, feed_type: str, name: Optional[str] = None, channel_id: Optional[str] = None) -> bool:
+def add_feed(
+    url: str,
+    feed_type: str,
+    name: Optional[str] = None,
+    channel_id: Optional[str] = None,
+) -> bool:
     """Add a new feed to monitor."""
     conn = _get_conn()
     try:
@@ -49,9 +61,14 @@ def add_feed(url: str, feed_type: str, name: Optional[str] = None, channel_id: O
         conn.close()
 
 
-def add_content_item(url: str, title: Optional[str] = None, description: Optional[str] = None,
-                     source_feed_id: Optional[str] = None, source_type: str = "manual", 
-                     added_by: str = "cli") -> bool:
+def add_content_item(
+    url: str,
+    title: Optional[str] = None,
+    description: Optional[str] = None,
+    source_feed_id: Optional[str] = None,
+    source_type: str = "manual",
+    added_by: str = "cli",
+) -> bool:
     """Add a new content item to potentially post about."""
     conn = _get_conn()
     try:
@@ -88,7 +105,7 @@ def get_unposted_items(limit: int = 20) -> list[dict[str, Any]]:
                 """,
             )
             all_items = [dict(row) for row in cur.fetchall()]
-            
+
             # Sample to ensure diversity across feed types
             by_feed = {}
             for item in all_items:
@@ -96,13 +113,13 @@ def get_unposted_items(limit: int = 20) -> list[dict[str, Any]]:
                 if ft not in by_feed:
                     by_feed[ft] = []
                 by_feed[ft].append(item)
-            
+
             # Take equal samples from each feed type
             sampled = []
             items_per_type = max(5, limit // max(len(by_feed), 1))
             for ft, items in by_feed.items():
                 sampled.extend(items[:items_per_type])
-            
+
             # Return up to limit
             return sampled[:limit]
     finally:
@@ -130,8 +147,9 @@ def mark_item_posted(content_item_id: str) -> bool:
         conn.close()
 
 
-def store_posted_content(content_item_id: str, platform: str, post_id: str, 
-                         post_url: str, post_text: str) -> bool:
+def store_posted_content(
+    content_item_id: str, platform: str, post_id: str, post_url: str, post_text: str
+) -> bool:
     """Store a posted content record."""
     conn = _get_conn()
     try:
@@ -151,8 +169,9 @@ def store_posted_content(content_item_id: str, platform: str, post_id: str,
         conn.close()
 
 
-def store_relevance_score(content_item_id: str, relevance_score: float, 
-                          confidence: float, reason: str) -> bool:
+def store_relevance_score(
+    content_item_id: str, relevance_score: float, confidence: float, reason: str
+) -> bool:
     """Store LLM relevance score for a content item."""
     conn = _get_conn()
     try:
