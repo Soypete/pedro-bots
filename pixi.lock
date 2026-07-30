@@ -1255,18 +1255,19 @@ packages:
 - pypi: /Users/soypete/code/pedro/pedro-agentware/python
   name: pedro-agentware
   version: 0.1.0
-  sha256: ced1b94f6b47c4cd7be5f1cd902ba6a29434d5d4de33d7f372eca2dbaeec9c2c
+  sha256: 0a2aeb235425f0ab5c414f475b5f79972cf7028c0aefe4b2a81676833f06fecd
   requires_dist:
   - pydantic>=2.0
   - pytest>=7.0 ; extra == 'dev'
   - pytest-cov>=4.0 ; extra == 'dev'
+  - pytest-asyncio>=0.21 ; extra == 'dev'
   - ruff>=0.1 ; extra == 'dev'
   - mypy>=1.0 ; extra == 'dev'
   requires_python: '>=3.10'
 - pypi: ./
   name: pedro-bots
   version: 0.1.0
-  sha256: 1b0bbfe16d9438a1a44957717838954dd479a8ffbc1376b6e4f172ac6d5569df
+  sha256: 7dc8103105234efb1f7ba9dad7dfd54b4610ab2544d1f4b4fe8ac2c9627f1adf
   requires_dist:
   - langchain>=0.3
   - langgraph>=0.2

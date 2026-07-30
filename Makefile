@@ -17,7 +17,7 @@ build:
 
 # Run the monitor agent locally (op injects secrets from .env)
 monitor: build
-	op run --env-file=.env -- podman run --rm $(ENV_FLAGS) $(IMAGE) --agent monitor
+	op run --env-file=.env -- podman run --rm $(ENV_FLAGS) $(IMAGE) -- agent --agent monitor
 
 # Run the suggestion agent locally (op injects secrets from .env)
 suggest: build

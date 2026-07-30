@@ -34,7 +34,7 @@ python = "~=3.12"
 # When middleware-py is published to PyPI, replace the path with: middleware-py = ">=0.1.0"
 [tool.pixi.pypi-dependencies]
 pedro-bots = { path = ".", editable = true }
-pedro-agentware = { path = "/Users/miriahpeterson/Code/go-projects/pedro-agentware/python", editable = true }
+pedro-agentware = { path = "/Users/soypete/code/pedro/pedro-agentware/python", editable = true }
 
 [tool.pixi.tasks]
 monitor    = { cmd = "op run --env-file=.env -- python -m main agent --agent monitor", env = { PYTHONPATH = "src" } }
