@@ -11,9 +11,8 @@ logger = logging.getLogger(__name__)
 def _load_policy() -> SimplePolicyEvaluator:
     """Load default policy - allows all tools for now."""
     policy = Policy(
-        name="default",
         rules=[],
-        default_action="allow",
+        default_deny=False,
     )
     return SimplePolicyEvaluator(policy)
 
