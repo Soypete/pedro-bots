@@ -1,24 +1,24 @@
 apiVersion: batch/v1
 kind: CronJob
 metadata:
-  name: {{ include "reddit-watcher.fullname" . }}-suggest
+  name: {{ include "reddit-watcher.fullname" . }}-cfp
   namespace: {{ .Release.Namespace }}
   labels:
     {{- include "reddit-watcher.labels" . | nindent 4 }}
-    app: suggest
+    app: cfp
 spec:
-  schedule: {{ .Values.suggestion.schedule | quote }}
-  concurrencyPolicy: {{ .Values.suggestion.concurrencyPolicy }}
-  successfulJobsHistoryLimit: {{ .Values.suggestion.successfulJobsHistoryLimit }}
-  failedJobsHistoryLimit: {{ .Values.suggestion.failedJobsHistoryLimit }}
+  schedule: {{ .Values.cfp.schedule | quote }}
+  concurrencyPolicy: {{ .Values.cfp.concurrencyPolicy }}
+  successfulJobsHistoryLimit: {{ .Values.cfp.successfulJobsHistoryLimit }}
+  failedJobsHistoryLimit: {{ .Values.cfp.failedJobsHistoryLimit }}
   jobTemplate:
     spec:
-      activeDeadlineSeconds: {{ .Values.suggestion.activeDeadlineSeconds }}
+      activeDeadlineSeconds: {{ .Values.cfp.activeDeadlineSeconds }}
       template:
         metadata:
           labels:
             {{- include "reddit-watcher.selectorLabels" . | nindent 12 }}
-            app: suggest
+            app: cfp
           {{- if .Values.vault.enabled }}
           annotations:
             {{- include "reddit-watcher.vaultAnnotations" . | nindent 12 }}
@@ -29,7 +29,7 @@ spec:
             - name: {{ .Chart.Name }}
               image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
               imagePullPolicy: {{ .Values.image.pullPolicy }}
-              {{- include "reddit-watcher.agentArgs" (dict "agent" "suggest" "root" .) | nindent 14 }}
+              {{- include "reddit-watcher.agentArgs" (dict "agent" "cfp" "root" .) | nindent 14 }}
               envFrom:
                 {{- include "reddit-watcher.envFrom" . | nindent 16 }}
               {{- with .Values.resources }}

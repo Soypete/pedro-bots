@@ -15,7 +15,10 @@ def get_secret(name: str) -> str | None:
         if os.path.exists(file_path):
             with open(file_path) as f:
                 return f.read().strip()
-    return os.environ.get(name)
+    for key in [name.lower(), name.upper(), name]:
+        if key in os.environ:
+            return os.environ[key]
+    return None
 
 
 def get_llm(model: str | None = None, max_tokens: int = 2048) -> ChatOpenAI:

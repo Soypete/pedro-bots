@@ -1,24 +1,26 @@
 apiVersion: batch/v1
 kind: CronJob
 metadata:
-  name: redditwatch-suggest
+  name: redditwatch-cfp
   namespace: redditwatch
 spec:
-  # Monday 09:00 Mountain Time
-  schedule: "0 15 * * 1"
+  # Tuesday 10:00 Mountain Time (UTC-6 MST / UTC-7 MDT)
+  schedule: "0 16 * * 2"
   concurrencyPolicy: Forbid
   successfulJobsHistoryLimit: 3
   failedJobsHistoryLimit: 5
   jobTemplate:
     spec:
-      activeDeadlineSeconds: 3600
+      activeDeadlineSeconds: 7200
       template:
         spec:
           restartPolicy: OnFailure
+          nodeSelector:
+            kubernetes.io/hostname: blue1
           containers:
             - name: redditwatch
               image: 100.81.89.62:5000/redditwatch:latest
-              args: ["agent", "--agent", "suggest"]
+              args: ["agent", "--agent", "cfp"]
               envFrom:
                 - configMapRef:
                     name: redditwatch-config

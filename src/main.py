@@ -9,6 +9,7 @@ sys.path.insert(0, os.path.dirname(__file__))
 from core.agents.monitor import run_monitor
 from core.agents.suggestion import run_suggestion
 from core.agents.social_poster import run_social_poster
+from core.agents.cfp_watch import run_cfp_watch
 from core.tools.social_tools import add_content_url, add_feed, list_pending
 from core.tools.supabase_tools import _get_conn
 
@@ -25,7 +26,7 @@ def cli() -> None:
     parser_agent = subparsers.add_parser("agent", help="Run an agent")
     parser_agent.add_argument(
         "--agent",
-        choices=["monitor", "suggest", "social-poster"],
+        choices=["monitor", "suggest", "social-poster", "cfp"],
         required=True,
         help="Which agent to run",
     )
@@ -73,6 +74,8 @@ def cli() -> None:
             run_suggestion()
         elif args.agent == "social-poster":
             run_social_poster(dry_run=args.dry_run)
+        elif args.agent == "cfp":
+            run_cfp_watch(dry_run=args.dry_run)
     elif args.command == "add-url":
         add_content_url(args.url, args.title)
     elif args.command == "add-feed":
