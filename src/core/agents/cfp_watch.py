@@ -151,6 +151,9 @@ For each topic, search, extract event/CFP URLs, fetch details, and store them us
                 elif fn_name == "fetch_cfp_page":
                     result = fetch_cfp_page.invoke(fn_args)
                 elif fn_name == "store_cfp":
+                    # Everything reaches us via the DuckDuckGo search tool, so record
+                    # that rather than letting the model omit it and default to "unknown".
+                    fn_args.setdefault("source", "duckduckgo")
                     result = store_cfp.invoke(fn_args)
                 else:
                     result = f"Unknown tool: {fn_name}"
