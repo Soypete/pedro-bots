@@ -8,6 +8,8 @@ dependencies = [
     "langchain>=0.3",
     "langgraph>=0.2",
     "langchain-openai>=0.2",
+    "deepagents>=0.5",
+    "httpx>=0.27",
     "praw>=7.0",
     "discord.py>=2.0",
     "psycopg2-binary>=2.9",
@@ -40,7 +42,9 @@ pedro-agentware = { path = "/Users/soypete/code/pedro/pedro-agentware/python", e
 monitor    = { cmd = "op run --env-file=.env -- python -m main agent --agent monitor", env = { PYTHONPATH = "src" } }
 suggest    = { cmd = "op run --env-file=.env -- python -m main agent --agent suggest", env = { PYTHONPATH = "src" } }
 social     = { cmd = "op run --env-file=.env -- python -m main agent --agent social-poster", env = { PYTHONPATH = "src" } }
+cfp        = { cmd = "op run --env-file=.env -- python -m main agent --agent cfp", env = { PYTHONPATH = "src" } }
 dry-run    = { cmd = "op run --env-file=.env -- python -m main agent --agent monitor --dry-run", env = { PYTHONPATH = "src" } }
+cfp-dry    = { cmd = "op run --env-file=.env -- python -m main agent --agent cfp --dry-run", env = { PYTHONPATH = "src" } }
 test       = { cmd = "python -m pytest tests/ -v", env = { PYTHONPATH = "src" } }
 eval       = { cmd = "op run --env-file=.env -- python scripts/eval_classification.py", env = { PYTHONPATH = "src" } }
 eval-integration = { cmd = "op run --env-file=.env -- python -m pytest tests/test_monitor_integration.py -v", env = { PYTHONPATH = "src" } }

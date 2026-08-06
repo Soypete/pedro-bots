@@ -75,18 +75,28 @@ monitor:
   concurrencyPolicy: Forbid
   successfulJobsHistoryLimit: 3
   failedJobsHistoryLimit: 5
+  activeDeadlineSeconds: 3600
 
 suggestion:
   schedule: "0 15 * * 1"  # Monday 09:00 Mountain Time
   concurrencyPolicy: Forbid
   successfulJobsHistoryLimit: 3
   failedJobsHistoryLimit: 5
+  activeDeadlineSeconds: 3600
 
 social:
   schedule: "0 14 * * *"  # 08:00 Mountain Time (UTC-6 MDT, change to "0 15" for UTC-7 MST)
   concurrencyPolicy: Forbid
   successfulJobsHistoryLimit: 3
   failedJobsHistoryLimit: 5
+  activeDeadlineSeconds: 3600
+
+cfp:
+  schedule: "0 16 * * 2"  # Tuesday 10:00 Mountain Time (UTC-6 MDT, change to "0 17" for UTC-7 MST)
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 5
+  activeDeadlineSeconds: 3600
 
 discord:
   webhookUrl: ""
@@ -94,13 +104,27 @@ discord:
   pingThreshold: 0.8
 
 config:
-  llamaCppBaseUrl: "http://100.121.229.114:8080/v1"
+  llamaCppBaseUrl: "http://100.121.229.114:8000/v1"
   llamaCppModel: "qwen3.6-27b-mtp"
   logLevel: "INFO"
   maxPostsPerQuery: 20
+  # Reddit fetch/classify tuning — defaults match what the cluster ran pre-Helm.
+  redditMinUpvotes: 25
+  redditWindowHours: 168
+  redditMaxComments: 5
+  redditMaxPostsWithComments: 10
+  redditClassifyMinScore: 50
+  redditClassifyWorkers: 2
+  redditFetchSafetyCap: 500
+
+# Name of the pre-existing Secret holding REDDIT_*/DISCORD_*/SUPABASE_*/POSTGRES_URL.
+# Used when vault.enabled is false.
+existingSecret: "redditwatch-secrets"
 
 vault:
-  enabled: true
+  # Vault/OpenBao agent injection. Off by default: the cluster's proven path is the
+  # existing Secret above. Enable once the "redditwatch" OpenBao role is confirmed.
+  enabled: false
   role: "redditwatch"
   redditPath: "secret/data/apps/redditwatch"
   discordPath: "secret/data/apps/discord"

@@ -11,23 +11,8 @@ spec:
   failedJobsHistoryLimit: 5
   jobTemplate:
     spec:
-      activeDeadlineSeconds: 3600  # kill job after 1h so hung runs never block the next schedule
+      activeDeadlineSeconds: 3600
       template:
-        metadata:
-          annotations:
-            vault.hashicorp.com/agent-inject: "true"
-            vault.hashicorp.com/agent-inject-init: "true"
-            vault.hashicorp.com/agent-inject-sidecar: "true"
-            vault.hashicorp.com/role: "pedro"
-            vault.hashicorp.com/agent-inject-secret-redditwatch: "secret/pedro/redditwatch"
-            vault.hashicorp.com/agent-inject-template-postgres_url: '{{- with secret "secret/pedro/redditwatch"}}{{.Data.data.POSTGRES_URL}}{{- end}}'
-            vault.hashicorp.com/agent-inject-template-supabase_url: '{{- with secret "secret/pedro/redditwatch"}}{{.Data.data.SUPABASE_URL}}{{- end}}'
-            vault.hashicorp.com/agent-inject-template-supabase_service_key: '{{- with secret "secret/pedro/redditwatch"}}{{.Data.data.SUPABASE_SERVICE_KEY}}{{- end}}'
-            vault.hashicorp.com/agent-inject-template-reddit_client_id: '{{- with secret "secret/pedro/redditwatch"}}{{.Data.data.REDDIT_CLIENT_ID}}{{- end}}'
-            vault.hashicorp.com/agent-inject-template-reddit_client_secret: '{{- with secret "secret/pedro/redditwatch"}}{{.Data.data.REDDIT_CLIENT_SECRET}}{{- end}}'
-            vault.hashicorp.com/agent-inject-template-reddit_user_agent: '{{- with secret "secret/pedro/redditwatch"}}{{.Data.data.REDDIT_USER_AGENT}}{{- end}}'
-            vault.hashicorp.com/agent-inject-template-discord_bot_token: '{{- with secret "secret/pedro/redditwatch"}}{{.Data.data.DISCORD_BOT_TOKEN}}{{- end}}'
-            vault.hashicorp.com/agent-inject-template-discord_channel_id: '{{- with secret "secret/pedro/redditwatch"}}{{.Data.data.DISCORD_CHANNEL_ID}}{{- end}}'
         spec:
           restartPolicy: OnFailure
           containers:
@@ -37,3 +22,5 @@ spec:
               envFrom:
                 - configMapRef:
                     name: redditwatch-config
+                - secretRef:
+                    name: redditwatch-secrets

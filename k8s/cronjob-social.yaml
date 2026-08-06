@@ -18,7 +18,7 @@ spec:
           restartPolicy: OnFailure
           containers:
             - name: pedrobots
-              image: zot.local/redditwatch:latest
+              image: 100.81.89.62:5000/redditwatch:latest
               command: ["python", "-m", "main", "agent", "--agent", "social-poster"]
               envFrom:
                 - secretRef:
