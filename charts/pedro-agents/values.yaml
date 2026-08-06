@@ -4,7 +4,8 @@ image:
   repository: 100.81.89.62:5000/redditwatch
   # IfNotPresent, not Always: Zot serves plain HTTP while containerd defaults to
   # HTTPS, so every pull fails until /etc/rancher/k3s/registries.yaml is applied
-  # to the nodes. IfNotPresent uses the locally cached image instead.
+  # to the nodes. All three nodes have the image cached, so IfNotPresent lets
+  # jobs schedule anywhere; Always fails everywhere. Revert once nodes are fixed.
   pullPolicy: IfNotPresent
   tag: "latest"
 
@@ -67,11 +68,7 @@ autoscaling:
   targetCPUUtilizationPercentage: 80
   # targetMemoryUtilizationPercentage: 80
 
-# Pinned to blue1, the node hosting the Zot registry and therefore the only one
-# with the image cached. Remove this once registries.yaml is applied cluster-wide
-# (see pedro-ops/docs/zot-registry-guide.md#k3s-node-configuration).
-nodeSelector:
-  kubernetes.io/hostname: blue1
+nodeSelector: {}
 
 tolerations: []
 
